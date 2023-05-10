@@ -2,19 +2,10 @@
 import React from 'react';
 import {render} from 'ink';
 import meow from 'meow';
-import App from './app.js';
+import App from './App.js';
 
 const cli = meow(
 	`
-	Usage
-	  $ wiz
-
-	Options
-		--name  Your name
-
-	Examples
-	  $ wiz --name=Jane
-	  Hello, Jane
 `,
 	{
 		importMeta: import.meta,
@@ -26,4 +17,4 @@ const cli = meow(
 	},
 );
 
-render(<App name={cli.flags.name} />);
+render(<App />);
