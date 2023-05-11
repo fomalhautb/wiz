@@ -17,4 +17,4 @@ const cli = meow(
 	},
 );
 
-render(<App />);
+render(<App prompt={cli.input.join(' ')}/>);
