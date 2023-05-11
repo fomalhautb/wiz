@@ -5,32 +5,16 @@ import Divider from './components/Devider.js';
 import SyntaxHighlight from './components/SyntaxHighlight.js';
 import EmptyLine from './components/EmptyLine.js';
 import { generateCommand } from './api/openai.js';
-import { exec } from 'child_process';
 
 type Props = {
 	prompt: string,
+	runCommand: (command: string) => void
 };
 
-function runCommand(command: string) {
-  exec(command, (error, stdout, stderr) => {
-    if (error) {
-      console.error(`Error executing command: ${error.message}`);
-      return;
-    }
-
-    if (stdout) {
-      console.log(`Command output:\n${stdout}`);
-    }
-
-    if (stderr) {
-      console.error(`Command error:\n${stderr}`);
-    }
-  });
-}
-
-export default function App({ prompt } : Props) {
+export default function App({ prompt, runCommand } : Props) {
 	const [generation, setGeneration] = useState<any>();
 	const [selection, setSelection] = useState<number>();
+  const [executed, setExecuted] = useState<boolean>(false);
 
 	useEffect(() => {
 		(async () => {
@@ -39,7 +23,6 @@ export default function App({ prompt } : Props) {
 				if (!response) return;
 				const parsed = JSON.parse(response);
 				if (!parsed.command || !parsed.explaination) return;
-				parsed.command = JSON.stringify(parsed.command);
 				parsed.explaination = JSON.stringify(parsed.explaination);
 				setGeneration(parsed);
 			} catch (error) {
@@ -50,9 +33,13 @@ export default function App({ prompt } : Props) {
 
 	useEffect(() => {
 		if (selection === 0) {
+      console.log(generation?.command);
 			runCommand(generation?.command);
+      setExecuted(true);
 		}
 	}, [selection]);
+
+  if (executed) return null;
 
 	return (
 		<Box flexDirection='column' borderStyle={'round'} borderColor={'grey'} paddingX={1}>

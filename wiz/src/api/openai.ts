@@ -14,6 +14,7 @@ The output format:
   "command": "string. the generated command",
   "explaination": "string. the explaination of each part of the command",
 }
+Note: the user is using a Mac.
 `
 
 export const generateCommand = async (instructions: string[]) => {
@@ -27,6 +28,7 @@ export const generateCommand = async (instructions: string[]) => {
       { role: "system", content: SYSTEM_PROMPT },
       { role: "user", content: ('Instruction: ' + instructions[0]) || '' },
     ],
+    temperature: 0,
   });
 
   return completion?.data?.choices?.[0]?.message?.content;
