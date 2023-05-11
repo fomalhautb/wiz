@@ -1,4 +1,4 @@
-import * as React from 'react';
+import React, { useMemo } from 'react';
 import {Text} from 'ink';
 import {highlight, Theme} from 'cli-highlight';
 
@@ -7,11 +7,9 @@ export interface Props {
 	language?: string;
 	theme?: Theme;
 }
-/**
- * SyntaxHighlight.
- */
+
 const SyntaxHighlight = ({ code, language, theme } : Props) => {
-	const highlightedCode = React.useMemo(() => {
+	const highlightedCode = useMemo(() => {
 		return highlight(code, {language, theme});
 	}, [code, language, theme]);
 
