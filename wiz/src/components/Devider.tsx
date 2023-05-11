@@ -3,14 +3,26 @@ import { Box, Text, useInput } from 'ink';
 
 type Props = {
   text: string,
+  location?: 'left' | 'center' | 'right',
 };
 
-export default function Divider({ text }: Props) {
+const Divider = ({ text, location }: Props) => {
+  const line = <Box 
+    borderStyle='single' 
+    borderColor={'grey'} 
+    borderLeft={false} 
+    borderRight={false} 
+    borderBottom={false} 
+    flexGrow={1}
+  />;
+
   return (
     <Box>
-      <Box borderStyle="double" borderLeft={false} borderRight={false} borderBottom={false} flexGrow={1}/>
-      <Text>{' ' + text + ' '}</Text>
-      <Box borderStyle="double" borderLeft={false} borderRight={false} borderBottom={false} flexGrow={1}/>
+      {location !== 'left' ? line : null}
+      <Text backgroundColor={'grey'}> {text} </Text>
+      {location !== 'right' ? line : null}
     </Box>
   );
 }
+
+export default Divider;

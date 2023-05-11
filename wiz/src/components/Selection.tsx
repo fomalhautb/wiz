@@ -8,7 +8,7 @@ type Props = {
   onClose?: (index: number) => void,
 };
 
-export default function Selection({ items, onClose }: Props) {
+const Selection = ({ items, onClose }: Props) => {
   const [selectedItem, setSelectedItem] = useState(0);
 
   useInput((input, key) => {
@@ -36,3 +36,5 @@ export default function Selection({ items, onClose }: Props) {
     </Box>
   );
 }
+
+export default Selection;
