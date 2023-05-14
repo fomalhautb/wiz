@@ -1,9 +1,10 @@
-import { Configuration, OpenAIApi } from "openai";
-import { OPENAI_KEY, OPENAI_ORG } from "../utils/constants.js";
+import {Configuration, OpenAIApi} from 'openai';
+import {OPENAI_KEY, OPENAI_ORG} from '../utils/constants.js';
+import {Generation} from '../types.js';
 
 const configuration = new Configuration({
-  apiKey: OPENAI_KEY,
-  organization: OPENAI_ORG,
+	apiKey: OPENAI_KEY,
+	organization: OPENAI_ORG,
 });
 const openai = new OpenAIApi(configuration);
 
@@ -15,21 +16,44 @@ The output format:
   "explaination": "string. the explaination of each part of the command",
 }
 Note: the user is using a Mac.
-`
+`;
 
-export const generateCommand = async (instructions: string[]) => {
-  if (instructions.length === 0) {
+const parseGeneration = (text: string): Generation | undefined => {
+  let parsed;
+  try {
+    parsed = JSON.parse(text);
+  } catch (error) {
     return;
   }
 
-  const completion = await openai.createChatCompletion({
-    model: "gpt-3.5-turbo",
-    messages: [
-      { role: "system", content: SYSTEM_PROMPT },
-      { role: "user", content: ('Instruction: ' + instructions[0]) || '' },
-    ],
-    temperature: 0,
-  });
+  if (!parsed.command || !parsed.explaination || typeof parsed.command != 'string') return;
+  if (typeof parsed.explaination != 'string') {
+    parsed.explaination = JSON.stringify(parsed.explaination);
+  }
 
-  return completion?.data?.choices?.[0]?.message?.content;
+  return {
+    command: parsed.command,
+    explaination: parsed.explaination,
+  };
 }
+
+export const generateCommand = async (
+	instructions: string[],
+): Promise<Generation | undefined> => {
+	if (instructions.length === 0) {
+		return;
+	}
+
+	const completion = await openai.createChatCompletion({
+		model: 'gpt-3.5-turbo',
+		messages: [
+			{role: 'system', content: SYSTEM_PROMPT},
+			{role: 'user', content: 'Instruction: ' + instructions[0] || ''},
+		],
+		temperature: 0,
+	});
+
+  const text = completion?.data?.choices?.[0]?.message?.content;
+  if (!text) return;
+	return parseGeneration(text);
+};

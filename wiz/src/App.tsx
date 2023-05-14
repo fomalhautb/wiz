@@ -5,6 +5,7 @@ import Divider from './components/Devider.js';
 import SyntaxHighlight from './components/SyntaxHighlight.js';
 import EmptyLine from './components/EmptyLine.js';
 import { generateCommand } from './api/openai.js';
+import { useGenerationStore } from './states/generation.js';
 
 type Props = {
 	prompt: string,
@@ -12,32 +13,18 @@ type Props = {
 };
 
 export default function App({ prompt, runCommand } : Props) {
-	const [generation, setGeneration] = useState<any>();
-	const [selection, setSelection] = useState<number>();
   const [executed, setExecuted] = useState<boolean>(false);
 
-	useEffect(() => {
-		(async () => {
-			try {
-				const response = await generateCommand([prompt]);
-				if (!response) return;
-				const parsed = JSON.parse(response);
-				if (!parsed.command || !parsed.explaination) return;
-				parsed.explaination = JSON.stringify(parsed.explaination);
-				setGeneration(parsed);
-			} catch (error) {
-				console.log(error)
-			}
-		})()
-	}, []);
+  const isLoading = useGenerationStore(state => state.isLoading);
+  const generation = useGenerationStore(state => state.generation);
+  const prompts = useGenerationStore(state => state.prompts);
+  const addPrompt = useGenerationStore(state => state.addPrompt);
+  const generate = useGenerationStore(state => state.generate);
 
-	useEffect(() => {
-		if (selection === 0) {
-      console.log(generation?.command);
-			runCommand(generation?.command);
-      setExecuted(true);
-		}
-	}, [selection]);
+  useEffect(() => {
+    addPrompt(prompt);
+    generate();
+  }, [prompt]);
 
   if (executed) return null;
 
@@ -45,16 +32,24 @@ export default function App({ prompt, runCommand } : Props) {
 		<Box flexDirection='column' borderStyle={'round'} borderColor={'grey'} paddingX={1}>
 			<Divider text={'Prompts'}/>
 			<EmptyLine />
-			<Text>{prompt}</Text>
+      {prompts.map((prompt, index) => (
+        <>
+          {index > 0 ? <Text color={'gray'}>{' => '}</Text> : null}
+          <Text key={index}>{prompt}</Text>
+        </>
+      ))}
 			<EmptyLine />
+
 			<Divider text={'Generated Query'}/>
 			<EmptyLine />
 			<SyntaxHighlight code={generation?.command || '...'} language={'bash'} />
 			<EmptyLine />
+
 			<Divider text={'Explainations'}/>
 			<EmptyLine />
 			<Text>{generation?.explaination || '...'}</Text>
 			<EmptyLine />
+
 			<Divider text={'Actions'}/>
 			<EmptyLine />
 			<Selection 
@@ -64,7 +59,12 @@ export default function App({ prompt, runCommand } : Props) {
 					{text: '📝 Edit myself'},
 					{text: '❌ Cancel'}
 				]}
-				onClose={(index) => setSelection(index)}
+				onClose={(index) => {
+          if (index === 0) {
+            runCommand(generation?.command || '');
+            setExecuted(true);
+          }
+        }}
 			/>
 			<EmptyLine />
 		</Box>
