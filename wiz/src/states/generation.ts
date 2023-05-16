@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { generateCommand } from '../api/openai.js';
+import { generateCommandStream } from '../api/openai.js';
 import { Generation } from '../types.js';
 
 interface GenerationState {
@@ -25,10 +25,15 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
     },
     generate: () => {
         set({ isLoading: true, isError: false, error: '' });
-        generateCommand(get().prompts).then((generation) => {
-            set({ isLoading: false, generation });
-        }).catch((error) => {
-            set({ isLoading: false, isError: true, error });
+        // generateCommand(get().prompts).then((generation) => {
+        //     set({ isLoading: false, generation });
+        // }).catch((error) => {
+        //     set({ isLoading: false, isError: true, error });
+        // });
+        generateCommandStream(get().prompts, (generation) => {
+            if (generation) {
+                set({ isLoading: true, generation });
+            }
         });
     },
 }))
