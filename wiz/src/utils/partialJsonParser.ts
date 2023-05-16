@@ -1,4 +1,5 @@
-// @ts-nochec
+// original repo: https://github.com/indgov/partial-json-parser
+
 export const partialParse = function(s) {
     var tail: string[] = [];
 
