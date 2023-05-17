@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { generateCommandStream } from '../api/openai.js';
 import { Generation } from '../types.js';
 
-interface GenerationState {
+type GenerationState = {
     isLoading: boolean;
     isError: boolean;
     error: string;
