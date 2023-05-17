@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {Box, Text} from 'ink';
 
 import Selection from '../components/Selection.js';
@@ -8,12 +8,23 @@ import EmptyLine from '../components/EmptyLine.js';
 import {useGenerationStore} from '../states/generation.js';
 import { runCommand } from '../utils/command.js';
 
-export default function GenerationPage() {
+type Props = {
+    prompt: string;
+};
+
+const GenerationPage = ({prompt}: Props) => {
 	const [executed, setExecuted] = useState<boolean>(false);
 
 	// const isLoading = useGenerationStore(state => state.isLoading);
 	const generation = useGenerationStore(state => state.generation);
 	const prompts = useGenerationStore(state => state.prompts);
+    const addPrompt = useGenerationStore(state => state.addPrompt);
+	const generate = useGenerationStore(state => state.generate);
+
+    useEffect(() => {
+        addPrompt(prompt);
+		generate();
+    }, [prompt]);
 
 	if (executed) return null;
 
@@ -64,3 +75,5 @@ export default function GenerationPage() {
 		</Box>
 	);
 }
+
+export default GenerationPage;

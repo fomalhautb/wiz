@@ -1,13 +1,7 @@
 import {Configuration, OpenAIApi} from 'openai';
-import {OPENAI_KEY, OPENAI_ORG} from '../utils/constants.js';
 import {Generation} from '../types.js';
 import {partialParse} from '../utils/partialJsonParser.js';
-
-const configuration = new Configuration({
-	apiKey: OPENAI_KEY,
-	organization: OPENAI_ORG,
-});
-const openai = new OpenAIApi(configuration);
+import {getConfig} from '../utils/config.js';
 
 const SYSTEM_PROMPT = `
 You are a CLI assistant. You help the user to generate commands from natrual language instructions. You can ONLY output json files that can be parsed by JavaScript JSON.parse. NO other expalination.
@@ -18,6 +12,21 @@ The output format:
 }
 Note: the user is using a Mac.
 `;
+
+export const checkApiKey = async (apiKey: string, organization?: string) => {
+	const configuration = new Configuration({
+		apiKey: apiKey,
+		organization: organization,
+	});
+	const openai = new OpenAIApi(configuration);
+
+	try {
+		await openai.listModels();
+		return true;
+	} catch (error) {
+		return false;
+	}
+};
 
 const parseGeneration = (text: string): Generation | undefined => {
 	let parsed;
@@ -44,6 +53,12 @@ export const generateCommand = async (
 		return;
 	}
 
+	const configuration = new Configuration({
+		apiKey: getConfig('openai_key'),
+		organization: getConfig('openai_org'),
+	});
+	const openai = new OpenAIApi(configuration);
+
 	const completion = await openai.createChatCompletion({
 		model: 'gpt-3.5-turbo',
 		messages: [
@@ -62,6 +77,12 @@ export const generateCommandStream = async (
 	instructions: string[],
 	callback: (generation: Generation | undefined) => void,
 ) => {
+	const configuration = new Configuration({
+		apiKey: getConfig('openai_key'),
+		organization: getConfig('openai_org'),
+	});
+	const openai = new OpenAIApi(configuration);
+	
 	const res = await openai.createChatCompletion(
 		{
 			model: 'gpt-3.5-turbo',

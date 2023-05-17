@@ -1,13 +1,15 @@
 import fs from 'fs';
+import {homedir} from 'os';
+import path from 'path';
 
 const CONFIG_TEMPLATE = {
 	openai_key: {
-		format: String,
+		type: 'string',
 		default: null,
 		nullable: true,
 	},
 	openai_org: {
-		format: String,
+		type: 'string',
 		default: null,
 		nullable: true,
 	},
@@ -17,24 +19,26 @@ const DEFAULT_CONFIG = Object.fromEntries(
 	Object.entries(CONFIG_TEMPLATE).map(([key, value]) => [key, value.default]),
 );
 
+const CONFIG_PATH = path.join(homedir(), '.wiz');
+
 const validateConfig = config => {
 	for (const [key, value] of Object.entries(config)) {
 		const template = CONFIG_TEMPLATE[key];
 		if (!template) {
 			throw new Error(`Invalid config key: ${key}`);
 		}
-		if (template.format !== typeof value || (template.nullable && value === null)) {
+		if ((value === null && !template.nullable) || (value !== null && template.type !== typeof value)) {
 			throw new Error(`Invalid config value for key ${key}: ${value}`);
 		}
 	}
 };
 
 const loadConfig = () => {
-	if (!fs.existsSync('~/.wiz')) {
+	if (!fs.existsSync(CONFIG_PATH)) {
 		return DEFAULT_CONFIG;
 	}
 
-	const config = JSON.parse(fs.readFileSync('~/.wiz', 'utf-8'));
+	const config = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf-8'));
 	validateConfig(config);
 
 	return {...DEFAULT_CONFIG, ...config};
@@ -42,7 +46,7 @@ const loadConfig = () => {
 
 const saveConfig = config => {
 	validateConfig(config);
-	fs.writeFileSync('~/.wiz', JSON.stringify(config));
+	fs.writeFileSync(CONFIG_PATH, JSON.stringify(config));
 };
 
 const config = loadConfig();

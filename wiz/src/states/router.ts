@@ -1,6 +1,6 @@
 import {create} from 'zustand';
 
-type Route = 'generation' | 'setup' | 'setting';
+type Route = 'loading' | 'generation' | 'setup' | 'setting';
 
 type RouterState = {
 	stack: Route[];
@@ -11,8 +11,8 @@ type RouterState = {
 };
 
 export const useRouteStore = create<RouterState>((set, get) => ({
-	stack: ['generation'],
-	current: 'generation',
+	stack: ['loading'],
+	current: 'loading',
 	push: route => {
 		set(state => ({
 			stack: [...state.stack, route],

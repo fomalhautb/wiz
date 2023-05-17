@@ -17,8 +17,8 @@
 	],
 	"dependencies": {
 		"cli-highlight": "^2.1.11",
-		"dotenv": "^16.0.3",
 		"ink": "^4.1.0",
+		"ink-text-input": "^5.0.1",
 		"meow": "^11.0.0",
 		"openai": "^3.2.1",
 		"react": "^18.2.0",
