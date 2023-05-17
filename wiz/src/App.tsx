@@ -39,11 +39,7 @@ export default function App({prompt, runCommand}: Props) {
 			<EmptyLine />
 			{prompts.map((prompt, index) => (
 				<Text key={index}>
-					{index > 0 ? (
-						<Text color={'gray'}>
-							{' => '}
-						</Text>
-					) : null}
+					{index > 0 ? <Text color={'gray'}>{' => '}</Text> : null}
 					<Text>{prompt}</Text>
 				</Text>
 			))}

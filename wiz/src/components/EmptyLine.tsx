@@ -1,8 +1,8 @@
 import React from 'react';
-import { Text } from 'ink';
+import {Text} from 'ink';
 
 const EmptyLine = () => {
-  return <Text> </Text>;
-}
+	return <Text> </Text>;
+};
 
 export default EmptyLine;

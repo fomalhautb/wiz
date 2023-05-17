@@ -1,4 +1,4 @@
 export type Generation = {
-    command: string;
-    explaination: string;
+	command: string;
+  explaination: string;
 };

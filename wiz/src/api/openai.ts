@@ -1,7 +1,7 @@
 import {Configuration, OpenAIApi} from 'openai';
 import {OPENAI_KEY, OPENAI_ORG} from '../utils/constants.js';
 import {Generation} from '../types.js';
-import { partialParse } from '../utils/partialJsonParser.js';
+import {partialParse} from '../utils/partialJsonParser.js';
 
 const configuration = new Configuration({
 	apiKey: OPENAI_KEY,
@@ -75,7 +75,7 @@ export const generateCommandStream = async (
 		},
 		{responseType: 'stream'},
 	);
-	
+
 	let text = '';
 
 	(res.data as any).on('data', (data: any) => {
