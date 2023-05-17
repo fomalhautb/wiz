@@ -23,16 +23,13 @@ const validateConfig = config => {
 		if (!template) {
 			throw new Error(`Invalid config key: ${key}`);
 		}
-		if (template.format !== typeof value) {
-			throw new Error(`Invalid config value for key ${key}: ${value}`);
-		}
-		if (!template.nullable && value === null) {
+		if (template.format !== typeof value || (template.nullable && value === null)) {
 			throw new Error(`Invalid config value for key ${key}: ${value}`);
 		}
 	}
 };
 
-export const loadConfig = () => {
+const loadConfig = () => {
 	if (!fs.existsSync('~/.wiz')) {
 		return DEFAULT_CONFIG;
 	}
@@ -43,7 +40,19 @@ export const loadConfig = () => {
 	return {...DEFAULT_CONFIG, ...config};
 };
 
-export const saveConfig = config => {
+const saveConfig = config => {
 	validateConfig(config);
 	fs.writeFileSync('~/.wiz', JSON.stringify(config));
 };
+
+const config = loadConfig();
+
+export const getConfig = key => {
+	return config[key];
+};
+
+export const setConfig = (key, value) => {
+	config[key] = value;
+	validateConfig(config);
+	saveConfig(config);
+}
