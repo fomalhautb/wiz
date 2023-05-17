@@ -31,11 +31,7 @@ const GenerationPage = ({prompt}: Props) => {
 	return (
 		<Box
 			flexDirection="column"
-			// borderStyle={'round'}
-			// borderColor={'grey'}
-			// paddingX={1}
 		>
-			<Divider text={'Prompts'} />
 			<EmptyLine />
 			{prompts.map((prompt, index) => (
 				<Text key={index}>
@@ -55,7 +51,7 @@ const GenerationPage = ({prompt}: Props) => {
 			<Text>{generation?.explaination || '...'}</Text>
 			<EmptyLine />
 
-			<Divider text={'Actions'} />
+			<Divider />
 			<EmptyLine />
 			<Selection
 				items={[

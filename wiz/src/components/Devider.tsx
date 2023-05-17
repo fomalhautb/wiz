@@ -1,8 +1,8 @@
-import React, {useState, useEffect} from 'react';
-import {Box, Text, useInput} from 'ink';
+import React from 'react';
+import {Box, Text} from 'ink';
 
 type Props = {
-	text: string;
+	text?: string;
 	location?: 'left' | 'center' | 'right';
 };
 
@@ -21,10 +21,14 @@ const Divider = ({text, location}: Props) => {
 	return (
 		<Box>
 			{location !== 'left' ? line : null}
-			<Text backgroundColor={'grey'}> {text} </Text>
+			{text ? <Text backgroundColor={'grey'}> {text} </Text> : null}
 			{location !== 'right' ? line : null}
 		</Box>
 	);
+};
+
+Divider.defaultProps = {
+	location: 'center',
 };
 
 export default Divider;
