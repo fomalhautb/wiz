@@ -1,6 +1,6 @@
 import React, {useEffect, useMemo, useState} from 'react';
 import {Box, Text, useApp, useInput} from 'ink';
-import {exec} from 'child_process';
+import {spawn} from 'child_process';
 
 import Selection from '../components/Selection.js';
 import Divider from '../components/Devider.js';
@@ -54,14 +54,12 @@ const GenerationPage = ({prompt}: Props) => {
 					]}
 					onClose={index => {
 						if (index === 0) {
-							exec(generation?.command || '', (error, stdout, stderr) => {
-								if (error) {
-									setExecutionResult(error.message);
-								} else {
-									setExecutionResult(stdout || stderr);
-								}
-							});
-							setCurrentState('executed');
+							if (!generation?.command) return;
+							const parts = generation.command.split(' ');
+							const command = parts[0] || '';
+							const args = parts.slice(1);
+							spawn(command, args, {stdio: 'inherit'});
+							exit();
 						} else if (index === 1) {
 							setCurrentState('revise');
 						} else if (index === 2) {
@@ -77,12 +75,6 @@ const GenerationPage = ({prompt}: Props) => {
 					<TextInput value={revisedPrompt} onChange={setRevisedPrompt} />
 				</Box>
 			);
-		} else if (currentState === 'executed') {
-			// TODO: this is a hack, find a better way to do this 
-			setTimeout(() => {
-				exit();
-			}, 1000);
-			return <Text>{executionResult}</Text>;
 		} else {
 			return null;
 		}
