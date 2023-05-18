@@ -1,4 +1,4 @@
-import {Configuration, OpenAIApi} from 'openai';
+import {ChatCompletionRequestMessage, Configuration, OpenAIApi} from 'openai';
 import {Generation} from '../types.js';
 import {partialParse} from '../utils/partialJsonParser.js';
 import {getConfig} from '../utils/config.js';
@@ -31,6 +31,7 @@ export const checkApiKey = async (apiKey: string, organization?: string) => {
 const parseGeneration = (text: string): Generation | undefined => {
 	let parsed;
 	try {
+		// TODO: this is a hack for not finished text, solve it with a more robust way later
 		parsed = partialParse(text + '",');
 	} catch (error) {
 		return;
@@ -46,11 +47,13 @@ const parseGeneration = (text: string): Generation | undefined => {
 	};
 };
 
-export const generateCommand = async (
-	instructions: string[],
-): Promise<Generation | undefined> => {
-	if (instructions.length === 0) {
-		return;
+export const generateCommandStream = async (
+	prompts: string[],
+	generations: Generation[],
+	callback: (generation: Generation | undefined) => void,
+) => {
+	if (prompts.length === 0 || prompts.length - 1 != generations.length) {
+		throw new Error('Invalid prompts or generations');
 	}
 
 	const configuration = new Configuration({
@@ -59,37 +62,21 @@ export const generateCommand = async (
 	});
 	const openai = new OpenAIApi(configuration);
 
-	const completion = await openai.createChatCompletion({
-		model: 'gpt-3.5-turbo',
-		messages: [
-			{role: 'system', content: SYSTEM_PROMPT},
-			{role: 'user', content: 'Instruction: ' + instructions[0] || ''},
-		],
-		temperature: 0,
-	});
+	const messages: ChatCompletionRequestMessage[] = [{role: 'system', content: SYSTEM_PROMPT}];
+	for (let i = 0; i < prompts.length; i++) {
+		messages.push({role: 'user', content: 'Instruction: ' + prompts[i]});
+		if (generations[i]) {
+			messages.push({
+				role: 'assistant',
+				content: JSON.stringify(generations[i]),
+			});
+		}
+	}
 
-	const text = completion?.data?.choices?.[0]?.message?.content;
-	if (!text) return;
-	return parseGeneration(text);
-};
-
-export const generateCommandStream = async (
-	instructions: string[],
-	callback: (generation: Generation | undefined) => void,
-) => {
-	const configuration = new Configuration({
-		apiKey: getConfig('openai_key'),
-		organization: getConfig('openai_org'),
-	});
-	const openai = new OpenAIApi(configuration);
-	
 	const res = await openai.createChatCompletion(
 		{
 			model: 'gpt-3.5-turbo',
-			messages: [
-				{role: 'system', content: SYSTEM_PROMPT},
-				{role: 'user', content: 'Instruction: ' + instructions[0] || ''},
-			],
+			messages,
 			max_tokens: 500,
 			stream: true,
 			temperature: 0,
@@ -112,7 +99,6 @@ export const generateCommandStream = async (
 			}
 			const parsed = JSON.parse(message);
 			text += parsed.choices[0].delta.content || '';
-			// console.log(text);
 			callback(parseGeneration(text));
 		}
 	});

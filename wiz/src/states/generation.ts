@@ -7,8 +7,9 @@ type GenerationState = {
 	isError: boolean;
 	error: string;
 	generation: Generation | null;
+	generations: Generation[];
 	prompts: string[];
-	addPrompt: (instruction: string) => void;
+	addPrompt: (prompt: string) => void;
 	generate: () => void;
 };
 
@@ -17,23 +18,33 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
 	isError: false,
 	error: '',
 	generation: null,
+	generations: [],
 	prompts: [],
-	addPrompt: instruction => {
+	addPrompt: prompt => {
 		set(state => ({
-			prompts: [...state.prompts, instruction],
+			prompts: [...state.prompts, prompt],
 		}));
 	},
 	generate: () => {
-		set({isLoading: true, isError: false, error: ''});
-		// generateCommand(get().prompts).then((generation) => {
-		//     set({ isLoading: false, generation });
-		// }).catch((error) => {
-		//     set({ isLoading: false, isError: true, error });
-		// });
-		generateCommandStream(get().prompts, generation => {
-			if (generation) {
-				set({isLoading: true, generation});
-			}
+		set({
+			isLoading: true,
+			isError: false,
+			error: '',
+			generations: [...get().generations, {command: '', explaination: ''}],
 		});
+
+		generateCommandStream(
+			get().prompts,
+			get().generations.slice(0, -1),
+			generation => {
+				if (generation) {
+					set({
+						isLoading: true,
+						generation,
+						generations: [...get().generations.slice(0, -1), generation],
+					});
+				}
+			},
+		);
 	},
 }));
