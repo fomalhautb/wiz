@@ -1,0 +1,11 @@
+[workspace]
+members = [
+    "ggml-raw",
+    "wiz-rs",
+    "wiz-cli"
+]
+
+resolver = "2"
+
+[workspace.dependencies]
+rand = "0.8.5"
