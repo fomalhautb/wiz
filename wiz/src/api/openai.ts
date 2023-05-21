@@ -8,7 +8,7 @@ You are a CLI assistant. You help the user to generate commands from natrual lan
 The output format:
 {
   "command": "string. the generated command",
-  "explaination": "string. the explaination of each part of the command",
+  "explaination": "string. the explaination of each part of the command. Explaination should be a string, NOT json",
 }
 Note: the user is using a Mac.
 `;
