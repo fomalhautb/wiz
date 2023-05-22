@@ -8,7 +8,7 @@ You are a CLI assistant. You help the user to generate commands from natrual lan
 The output format:
 {
   "command": "string. the generated command",
-  "explaination": "string. the explaination of each part of the command. Explaination should be a string, NOT json",
+  "explaination": "string. the explaination of each part of the command. Explaination should be a string, NOT json. Use line breaks to separate each part of the explaination.",
 }
 Note: the user is using a Mac.
 `;
@@ -31,14 +31,15 @@ export const checkApiKey = async (apiKey: string, organization?: string) => {
 const parseGeneration = (text: string): Generation | undefined => {
 	let parsed;
 	try {
-		// TODO: this is a hack for not finished text, solve it with a more robust way later
-		parsed = partialParse(text + '",');
+		parsed = partialParse(text);
 	} catch (error) {
 		return;
 	}
 
-	if (typeof parsed.explaination != 'string') {
+	if (typeof parsed.explaination === 'object') {
 		parsed.explaination = JSON.stringify(parsed.explaination);
+	} else if (typeof parsed.explaination !== 'string') {
+		parsed.explaination = '';
 	}
 
 	return {
