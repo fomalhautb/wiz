@@ -1,6 +1,6 @@
 import {create} from 'zustand';
 
-type Route = 'loading' | 'generation' | 'setup' | 'setting';
+type Route = 'loading' | 'prompting' | 'completion' | 'setup' | 'setting';
 
 type RouterState = {
 	stack: Route[];

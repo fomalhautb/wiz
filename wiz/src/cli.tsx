@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import React from 'react';
-import {render} from 'ink';
+import {Text, render} from 'ink';
 import meow from 'meow';
 import App from './App.js';
 
@@ -10,11 +10,14 @@ const cli = meow(
 	{
 		importMeta: import.meta,
 		flags: {
-			name: {
-				type: 'string',
+			settings: {
+				type: 'boolean',
+				shortFlag: 's',
 			},
 		},
 	},
 );
 
-render(<App prompt={cli.input.join(' ')} />);
+const input = cli.input.join(' ');
+
+render(<App prompt={input} />);

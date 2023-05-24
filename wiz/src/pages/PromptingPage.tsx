@@ -15,7 +15,7 @@ type Props = {
 
 type Selection = 'selecting' | 'revise' | 'executed';
 
-const GenerationPage = ({prompt}: Props) => {
+const PromptingPage = ({prompt}: Props) => {
 	const generation = useGenerationStore(state => state.generation);
 	const prompts = useGenerationStore(state => state.prompts);
 	const addPrompt = useGenerationStore(state => state.addPrompt);
@@ -109,4 +109,4 @@ const GenerationPage = ({prompt}: Props) => {
 	);
 };
 
-export default GenerationPage;
+export default PromptingPage;
