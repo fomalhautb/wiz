@@ -4,6 +4,7 @@ import PromptingPage from './pages/PromptingPage.js';
 import {Text} from 'ink';
 import {getConfig} from './utils/config.js';
 import SetupPage from './pages/SetupPage.js';
+import CompletionPage from './pages/CompletionPage.js';
 
 type Props = {
 	prompt: string;
@@ -31,7 +32,7 @@ export default function App({prompt}: Props) {
 	} else if (currentRoute === 'prompting') {
 		return <PromptingPage prompt={prompt} />;
 	} else if (currentRoute === 'completion') {
-		return <Text>Completion</Text>;
+		return <CompletionPage />;
 	} else if (currentRoute === 'setup') {
 		return <SetupPage />;
 	} else if (currentRoute === 'setting') {
