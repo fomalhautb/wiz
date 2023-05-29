@@ -1,15 +1,15 @@
 import React, {useState} from 'react';
-import {Box, Text, useInput} from 'ink';
+import {Box, Text, useApp, useInput} from 'ink';
 import TextInput from 'ink-text-input';
-import { checkApiKey } from '../api/openai.js';
-import { setConfig } from '../utils/config.js';
-import { useRouteStore } from '../states/router.js';
+import {checkApiKey} from '../utils/openai.js';
+import {setConfig} from '../utils/config.js';
 
 const SetupPage = () => {
-	const popRoute = useRouteStore(state => state.pop);
-
 	const [apiKey, setApiKey] = useState('');
-	const [status, setStatus] = useState<'entering' | 'valid' | 'invalid'>('entering');
+	const [status, setStatus] = useState<'entering' | 'valid' | 'invalid'>(
+		'entering',
+	);
+	const {exit} = useApp();
 
 	useInput((input, key) => {
 		if (key.return) {
@@ -17,7 +17,7 @@ const SetupPage = () => {
 				if (valid) {
 					setStatus('valid');
 					setConfig('openai_key', apiKey);
-					popRoute();
+					exit();
 				} else {
 					setStatus('invalid');
 				}
@@ -33,7 +33,9 @@ const SetupPage = () => {
 				<Text color="blue">Your OpenAI API key:</Text>
 			</Box>
 			<TextInput value={apiKey} onChange={setApiKey} />
-			{status === 'invalid' ? <Text color='red'>   ❌ Invalid API key</Text> : null}
+			{status === 'invalid' ? (
+				<Text color="red"> ❌ Invalid API key</Text>
+			) : null}
 		</Box>
 	);
 };

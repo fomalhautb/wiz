@@ -2,30 +2,29 @@ import React, {useEffect, useMemo, useState} from 'react';
 import {Box, Text, useApp, useInput} from 'ink';
 import {spawn} from 'child_process';
 
-import Selection from '../components/Selection.js';
+import State from '../components/Selection.js';
 import Divider from '../components/Devider.js';
 import SyntaxHighlight from '../components/SyntaxHighlight.js';
 import EmptyLine from '../components/EmptyLine.js';
-import {useGenerationStore} from '../states/generation.js';
+import {usePromptingStore} from '../states/prompting.js';
 import TextInput from 'ink-text-input';
 
 type Props = {
 	prompt: string;
 };
 
-type Selection = 'selecting' | 'revise' | 'executed';
+type State = 'selecting' | 'revise' | 'executed';
 
-const GenerationPage = ({prompt}: Props) => {
-	const generation = useGenerationStore(state => state.generation);
-	const prompts = useGenerationStore(state => state.prompts);
-	const addPrompt = useGenerationStore(state => state.addPrompt);
-	const generate = useGenerationStore(state => state.generate);
+const PromptingPage = ({prompt}: Props) => {
+	const generation = usePromptingStore(state => state.generation);
+	const prompts = usePromptingStore(state => state.prompts);
+	const addPrompt = usePromptingStore(state => state.addPrompt);
+	const generate = usePromptingStore(state => state.generate);
 
 	const {exit} = useApp();
 
-	const [currentState, setCurrentState] = useState<Selection>('selecting');
+	const [currentState, setCurrentState] = useState<State>('selecting');
 	const [revisedPrompt, setRevisedPrompt] = useState<string>('');
-	const [executionResult, setExecutionResult] = useState<string | null>();
 
 	useEffect(() => {
 		addPrompt(prompt);
@@ -45,7 +44,7 @@ const GenerationPage = ({prompt}: Props) => {
 	const action = useMemo(() => {
 		if (currentState === 'selecting') {
 			return (
-				<Selection
+				<State
 					items={[
 						{text: '✅ Execute command'},
 						{text: '🎯 Revise prompt'},
@@ -78,7 +77,7 @@ const GenerationPage = ({prompt}: Props) => {
 		} else {
 			return null;
 		}
-	}, [currentState, revisedPrompt, generation, executionResult]);
+	}, [currentState, revisedPrompt, generation]);
 
 	return (
 		<Box flexDirection="column">
@@ -109,4 +108,4 @@ const GenerationPage = ({prompt}: Props) => {
 	);
 };
 
-export default GenerationPage;
+export default PromptingPage;
