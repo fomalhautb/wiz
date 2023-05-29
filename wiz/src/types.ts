@@ -1,4 +1,4 @@
-export type Generation = {
+export type PromptingResult = {
 	command: string;
   explaination: string;
 };

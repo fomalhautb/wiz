@@ -1,19 +1,19 @@
 import {create} from 'zustand';
-import {generateCommandStream} from '../api/openai.js';
-import {Generation} from '../types.js';
+import {generateCommandStream} from '../utils/openai.js';
+import {PromptingResult} from '../types.js';
 
-type GenerationState = {
+type PromptingState = {
 	isLoading: boolean;
 	isError: boolean;
 	error: string;
-	generation: Generation | null;
-	generations: Generation[];
+	generation: PromptingResult | null;
+	generations: PromptingResult[];
 	prompts: string[];
 	addPrompt: (prompt: string) => void;
 	generate: () => void;
 };
 
-export const useGenerationStore = create<GenerationState>((set, get) => ({
+export const usePromptingStore = create<PromptingState>((set, get) => ({
 	isLoading: false,
 	isError: false,
 	error: '',

@@ -6,7 +6,7 @@ import Selection from '../components/Selection.js';
 import Divider from '../components/Devider.js';
 import SyntaxHighlight from '../components/SyntaxHighlight.js';
 import EmptyLine from '../components/EmptyLine.js';
-import {useGenerationStore} from '../states/generation.js';
+import {usePromptingStore} from '../states/prompting.js';
 import TextInput from 'ink-text-input';
 
 type Props = {
@@ -16,10 +16,10 @@ type Props = {
 type Selection = 'selecting' | 'revise' | 'executed';
 
 const PromptingPage = ({prompt}: Props) => {
-	const generation = useGenerationStore(state => state.generation);
-	const prompts = useGenerationStore(state => state.prompts);
-	const addPrompt = useGenerationStore(state => state.addPrompt);
-	const generate = useGenerationStore(state => state.generate);
+	const generation = usePromptingStore(state => state.generation);
+	const prompts = usePromptingStore(state => state.prompts);
+	const addPrompt = usePromptingStore(state => state.addPrompt);
+	const generate = usePromptingStore(state => state.generate);
 
 	const {exit} = useApp();
 

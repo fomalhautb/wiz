@@ -2,7 +2,7 @@
 import React from 'react';
 import {render} from 'ink';
 import meow from 'meow';
-import Test from './components/Completion.js';
+import Completion from './components/Completion.js';
 import {spawn} from 'child_process';
 import {getConfig} from './utils/config.js';
 import SetupPage from './pages/SetupPage.js';
@@ -34,7 +34,7 @@ if (input.trim() !== '') {
 } else {
 	while (true) {
 		let input = '';
-		const {waitUntilExit} = render(<Test onExit={i => (input = i)} />);
+		const {waitUntilExit} = render(<Completion onExit={i => (input = i)} />);
 		await waitUntilExit();
 
 		const spawnPromise = (cmd, args) => {

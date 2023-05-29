@@ -6,7 +6,7 @@ type Props = {
     onExit: (input: string) => void;
 };
 
-const Test = ({onExit} : Props) => {
+const Completion = ({onExit} : Props) => {
 	const [command, setCommand] = useState('');
 	const {exit} = useApp();
 
@@ -25,4 +25,4 @@ const Test = ({onExit} : Props) => {
 	);
 };
 
-export default Test;
+export default Completion;

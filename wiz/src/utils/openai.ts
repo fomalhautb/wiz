@@ -1,7 +1,7 @@
 import {ChatCompletionRequestMessage, Configuration, OpenAIApi} from 'openai';
-import {Generation} from '../types.js';
-import {partialParse} from '../utils/partialJsonParser.js';
-import {getConfig} from '../utils/config.js';
+import {PromptingResult} from '../types.js';
+import {partialParse} from './partialJsonParser.js';
+import {getConfig} from './config.js';
 
 const SYSTEM_PROMPT = `
 You are a CLI assistant. You help the user to generate commands from natrual language instructions. You can ONLY output json files that can be parsed by JavaScript JSON.parse. NO other expalination.
@@ -28,7 +28,7 @@ export const checkApiKey = async (apiKey: string, organization?: string) => {
 	}
 };
 
-const parseGeneration = (text: string): Generation | undefined => {
+const parsePromptingResult = (text: string): PromptingResult | undefined => {
 	let parsed;
 	try {
 		parsed = partialParse(text);
@@ -50,8 +50,8 @@ const parseGeneration = (text: string): Generation | undefined => {
 
 export const generateCommandStream = async (
 	prompts: string[],
-	generations: Generation[],
-	callback: (generation: Generation | undefined) => void,
+	generations: PromptingResult[],
+	callback: (generation: PromptingResult | undefined) => void,
 ) => {
 	if (prompts.length === 0 || prompts.length - 1 != generations.length) {
 		throw new Error('Invalid prompts or generations');
@@ -100,7 +100,7 @@ export const generateCommandStream = async (
 			}
 			const parsed = JSON.parse(message);
 			text += parsed.choices[0].delta.content || '';
-			callback(parseGeneration(text));
+			callback(parsePromptingResult(text));
 		}
 	});
 };
