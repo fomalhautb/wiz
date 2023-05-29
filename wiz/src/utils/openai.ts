@@ -17,7 +17,7 @@ const SYSTEM_MESSAGE_COMPLETION = `
 Your are a CLI command completion assistant. You help the user to complete a command from a partial command. You can ONLY output json files that can be parsed by JavaScript JSON.parse. NO other expalination.
 The output format:
 {
-	"completion": "string. the completed command. Do NOT include the partial command inputed by the user. If the user input is already the completed command, return an empty string for this field.",
+	"completion": "string. the completed command. Do NOT include the partial command inputed by the user. If the user input is already the completed command, return an empty string for this field. Note this string will be concatenated directly with the partial command inputed by the user, so take care of the space between them.",
 }
 Note: the user is using a Mac.
 `;
@@ -37,15 +37,19 @@ export const checkApiKey = async (apiKey: string, organization?: string) => {
 	}
 };
 
-const chatCompletionStream = (
-	messages: ChatCompletionRequestMessage[],
-	callback: (generation: string | undefined) => void,
-) => {
+const setUpOpenai = () => {
 	const configuration = new Configuration({
 		apiKey: getConfig('openai_key'),
 		organization: getConfig('openai_org'),
 	});
-	const openai = new OpenAIApi(configuration);
+	return new OpenAIApi(configuration);
+};
+
+const chatCompletionStream = (
+	messages: ChatCompletionRequestMessage[],
+	callback: (generation: string | undefined) => void,
+) => {
+	const openai = setUpOpenai();
 
 	openai
 		.createChatCompletion(
@@ -75,6 +79,21 @@ const chatCompletionStream = (
 				}
 			});
 		});
+};
+
+const chatCompletion = async messages => {
+	const openai = setUpOpenai();
+
+	const res = await openai.createChatCompletion(
+		{
+			model: 'gpt-3.5-turbo',
+			messages,
+			max_tokens: 500,
+			temperature: 0,
+		},
+	);
+
+	return res.data.choices[0]?.message?.content;
 };
 
 const parsePromptingResult = (text: string): PromptingResult | undefined => {
@@ -118,7 +137,7 @@ const parseCompletionResult = (text: string): CompletionResult | undefined => {
 	};
 };
 
-export const generatePromptingStream = async (
+export const generatePromptingStream = (
 	prompts: string[],
 	generations: PromptingResult[],
 	callback: (generation: PromptingResult | undefined) => void,
@@ -148,19 +167,15 @@ export const generatePromptingStream = async (
 	});
 };
 
-export const generateCompletionStream = async (
+export const generateCompletion = async (
 	input: string,
-	callback: (generation: CompletionResult | undefined) => void,
-) => {
+): Promise<CompletionResult | undefined> => {
 	const messages: ChatCompletionRequestMessage[] = [
 		{role: 'system', content: SYSTEM_MESSAGE_COMPLETION},
 		{role: 'user', content: 'Input: ' + input},
 	];
 
-	let text = '';
-	chatCompletionStream(messages, message => {
-		if (!message) return;
-		text += message;
-		callback(parseCompletionResult(text));
-	});
+	const result = await chatCompletion(messages);
+	if (!result) return;
+	return parseCompletionResult(result);
 };

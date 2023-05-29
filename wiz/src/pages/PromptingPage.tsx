@@ -2,7 +2,7 @@ import React, {useEffect, useMemo, useState} from 'react';
 import {Box, Text, useApp, useInput} from 'ink';
 import {spawn} from 'child_process';
 
-import Selection from '../components/Selection.js';
+import State from '../components/Selection.js';
 import Divider from '../components/Devider.js';
 import SyntaxHighlight from '../components/SyntaxHighlight.js';
 import EmptyLine from '../components/EmptyLine.js';
@@ -13,7 +13,7 @@ type Props = {
 	prompt: string;
 };
 
-type Selection = 'selecting' | 'revise' | 'executed';
+type State = 'selecting' | 'revise' | 'executed';
 
 const PromptingPage = ({prompt}: Props) => {
 	const generation = usePromptingStore(state => state.generation);
@@ -23,7 +23,7 @@ const PromptingPage = ({prompt}: Props) => {
 
 	const {exit} = useApp();
 
-	const [currentState, setCurrentState] = useState<Selection>('selecting');
+	const [currentState, setCurrentState] = useState<State>('selecting');
 	const [revisedPrompt, setRevisedPrompt] = useState<string>('');
 
 	useEffect(() => {
@@ -44,7 +44,7 @@ const PromptingPage = ({prompt}: Props) => {
 	const action = useMemo(() => {
 		if (currentState === 'selecting') {
 			return (
-				<Selection
+				<State
 					items={[
 						{text: '✅ Execute command'},
 						{text: '🎯 Revise prompt'},
