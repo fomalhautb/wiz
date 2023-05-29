@@ -1,6 +1,6 @@
 use clap::Parser;
 use once_cell::sync::Lazy;
-use wiz_rs::TokenBias;
+use wiz_rs::ConstantTokenBias;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -47,11 +47,11 @@ pub struct Args {
     /// The penalty for repeating tokens. Higher values make the generation less
     /// likely to get into a loop, but may harm results when repetitive outputs
     /// are desired.
-    #[arg(long, default_value_t = 0.00001)]
+    #[arg(long, default_value_t = 0.000000000001)]
     pub repeat_penalty: f32,
 
     /// Temperature
-    #[arg(long, default_value_t = 1.0)]
+    #[arg(long, default_value_t = 0.5)]
     pub temp: f32,
 
     /// Top-K: The top K words by score are kept during sampling.
@@ -60,12 +60,12 @@ pub struct Args {
 
     /// Top-p: The cummulative probability after which no more words are kept
     /// for sampling.
-    #[arg(long, default_value_t = 1.0)]
+    #[arg(long, default_value_t = 0.8)]
     pub top_p: f32,
 
     /// Stores a cached prompt at the given path. The same prompt can then be
     /// loaded from disk using --restore-prompt
-    #[arg(long, default_value = None)]
+    #[arg(long, default_value = "./convert_to_command.bin")]
     pub cache_prompt: Option<String>,
 
     /// Restores a cached prompt at the given path, previously using
@@ -91,7 +91,7 @@ pub struct Args {
     /// (start of document) and 2 (end of document) to -1.0 which effectively
     /// disables the model from generating responses containing those token IDs.
     #[arg(long, default_value = None, value_parser = parse_bias)]
-    pub token_bias: Option<TokenBias>,
+    pub token_bias: Option<ConstantTokenBias>,
 
     /// Prevent the end of stream (EOS/EOD) token from being generated. This will allow the
     /// model to generate text until it runs out of context space. Note: The --token-bias
@@ -100,7 +100,7 @@ pub struct Args {
     pub ignore_eos: bool,
 }
 
-fn parse_bias(s: &str) -> Result<TokenBias, String> {
+fn parse_bias(s: &str) -> Result<ConstantTokenBias, String> {
     s.parse()
 }
 

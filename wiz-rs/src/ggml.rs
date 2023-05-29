@@ -22,6 +22,9 @@ pub struct Context {
     /// with it if the underlying context has been deallocated.
     ptr: Arc<NonNull<ggml_raw::ggml_context>>,
 }
+
+unsafe impl Send for Context {}
+
 impl Context {
     pub fn init(mem_size: usize) -> Self {
         let raw = unsafe {
@@ -194,6 +197,8 @@ pub struct Tensor {
     ptr: NonNull<ggml_raw::ggml_tensor>,
     ctx: Weak<NonNull<ggml_raw::ggml_context>>,
 }
+
+unsafe impl Send for Tensor {}
 
 impl Tensor {
     /// Creates a shared copy of this tensor pointer.

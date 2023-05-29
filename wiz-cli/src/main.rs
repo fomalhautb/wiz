@@ -1,4 +1,6 @@
 use std::cell::RefCell;
+use std::rc::Rc;
+use std::sync::Arc;
 use std::{convert::Infallible, io::Write};
 
 use cli_args::CLI_ARGS;
@@ -8,8 +10,8 @@ use rand::SeedableRng;
 use rustyline::error::ReadlineError;
 use tokenizers::Tokenizer;
 use wiz_rs::{
-    InferenceError, InferenceParameters, InferenceSessionParameters, InferenceSnapshot,
-    ModelKVMemoryType, TokenBias, EOD_TOKEN_ID,
+    ConstantTokenBias, InferenceError, InferenceParameters, InferenceSessionParameters,
+    InferenceSnapshot, ModelKVMemoryType, TokenBias, EOD_TOKEN_ID,
 };
 
 mod cli_args;
@@ -62,7 +64,7 @@ fn repl_mode(
                 // print!("\r\x1b[K");
 
                 if let Err(InferenceError::ContextFull) = res {
-                    log::error!("Reply exceeds context window length");
+                    log::error!("Reply exceeds context window l gth");
                 }
 
                 let text = text.into_inner().trim().to_string();
@@ -74,6 +76,42 @@ fn repl_mode(
             }
             Err(err) => {
                 log::error!("{err}");
+            }
+        }
+    }
+}
+
+#[derive(Default, Clone, Debug, PartialEq)]
+pub struct CustomTokenBias(Rc<RefCell<String>>);
+
+impl CustomTokenBias {
+    pub fn new(bias: Rc<RefCell<String>>) -> Self {
+        Self(bias)
+    }
+}
+
+impl TokenBias for CustomTokenBias {
+    fn get(&self, tid: u32) -> Option<f32> {
+        if tid != EOD_TOKEN_ID {
+            None
+        } else {
+            // If less than 2 newlines, prevent eod token
+            let text = self.0.borrow();
+            if text.ends_with('\n') {
+                return Some(-1.0);
+            }
+
+            let response_index = text.find("### Response:").unwrap_or(0);
+
+            let n_newlines = text[response_index..]
+                .chars()
+                .filter(|c| *c == '\n')
+                .count();
+
+            if n_newlines < 4 {
+                Some(-1.0)
+            } else {
+                None
             }
         }
     }
@@ -94,13 +132,13 @@ fn main() {
         top_p: args.top_p,
         repeat_penalty: args.repeat_penalty,
         temp: args.temp,
-        bias_tokens: args.token_bias.clone().unwrap_or_else(|| {
+        bias_tokens: Box::new(args.token_bias.clone().unwrap_or_else(|| {
             if args.ignore_eos {
-                TokenBias::new(vec![(EOD_TOKEN_ID, -1.0)])
+                ConstantTokenBias::new(vec![(EOD_TOKEN_ID, -1.0)])
             } else {
-                TokenBias::default()
+                ConstantTokenBias::default()
             }
-        }),
+        })),
     };
     let inference_session_params = {
         let mem_typ = if args.float16 {
@@ -225,13 +263,32 @@ fn main() {
     if args.repl {
         repl_mode(&model, &vocab, &inference_params, &inference_session_params);
     } else if let Some(cache_path) = &args.cache_prompt {
-        let res =
-            session.feed_prompt::<Infallible>(&model, &vocab, &inference_params, &prompt, |t| {
+        let text: Rc<RefCell<String>> = Rc::new(RefCell::new("".to_string()));
+
+        let new_inference_params: InferenceParameters = InferenceParameters {
+            bias_tokens: Box::new(CustomTokenBias::new(text.clone())),
+            ..inference_params
+        };
+
+        println!("Starting inference with prompt: {prompt}");
+
+        let res = session.feed_prompt::<Infallible>(
+            &model,
+            &vocab,
+            &new_inference_params,
+            &prompt,
+            |t| {
                 print!("{t}");
                 std::io::stdout().flush().unwrap();
 
+                {
+                    let mut text = text.borrow_mut();
+                    *text += &format!("{t}");
+                }
+
                 Ok(())
-            });
+            },
+        );
 
         println!();
 
@@ -264,16 +321,27 @@ fn main() {
             }
         }
     } else {
+        let text: Rc<RefCell<String>> = Rc::new(RefCell::new("".to_string()));
+
+        let new_inference_params: InferenceParameters = InferenceParameters {
+            bias_tokens: Box::new(CustomTokenBias::new(text.clone())),
+            ..inference_params
+        };
         let res = session.inference_with_prompt::<Infallible>(
             &model,
             &vocab,
-            &inference_params,
+            &new_inference_params,
             &prompt,
             args.num_predict,
             &mut rng,
             |t| {
                 print!("{}", t.to_string().yellow().bold());
                 std::io::stdout().flush().unwrap();
+
+                {
+                    let mut text = text.borrow_mut();
+                    *text += &format!("{t}");
+                }
 
                 Ok(())
             },

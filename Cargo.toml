@@ -2,7 +2,8 @@
 members = [
     "ggml-raw",
     "wiz-rs",
-    "wiz-cli"
+    "wiz-cli",
+    "wiz-server"
 ]
 
 resolver = "2"
