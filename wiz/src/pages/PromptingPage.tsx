@@ -25,7 +25,6 @@ const PromptingPage = ({prompt}: Props) => {
 
 	const [currentState, setCurrentState] = useState<Selection>('selecting');
 	const [revisedPrompt, setRevisedPrompt] = useState<string>('');
-	const [executionResult, setExecutionResult] = useState<string | null>();
 
 	useEffect(() => {
 		addPrompt(prompt);
@@ -78,7 +77,7 @@ const PromptingPage = ({prompt}: Props) => {
 		} else {
 			return null;
 		}
-	}, [currentState, revisedPrompt, generation, executionResult]);
+	}, [currentState, revisedPrompt, generation]);
 
 	return (
 		<Box flexDirection="column">
