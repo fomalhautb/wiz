@@ -31,6 +31,7 @@ const Completion = ({onExit}: Props) => {
 			clearTimeout(timer);
 		}
 
+		// TODO: handle edit after generation
 		setTimer(
 			setTimeout(async () => {
 				setCurrentState('generating');
