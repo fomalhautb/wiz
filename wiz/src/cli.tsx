@@ -32,6 +32,7 @@ if (!getConfig('openai_key')) {
 if (input.trim() !== '') {
 	render(<PromptingPage prompt={input} />);
 } else {
+	// TODO: handle errors
 	while (true) {
 		let input = '';
 		const {waitUntilExit} = render(<Completion onExit={i => (input = i)} />);
