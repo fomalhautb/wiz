@@ -1,5 +1,5 @@
 import {create} from 'zustand';
-import {generateCommandStream} from '../utils/openai.js';
+import {generatePromptingStream} from '../utils/openai.js';
 import {PromptingResult} from '../types.js';
 
 type PromptingState = {
@@ -33,7 +33,7 @@ export const usePromptingStore = create<PromptingState>((set, get) => ({
 			generations: [...get().generations, {command: '', explaination: ''}],
 		});
 
-		generateCommandStream(
+		generatePromptingStream(
 			get().prompts,
 			get().generations.slice(0, -1),
 			generation => {
