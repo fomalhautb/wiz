@@ -72,6 +72,7 @@ const chatCompletionStream = (
 					const message = line.replace(/^data: /, '');
 					if (message === '[DONE]') {
 						callback(undefined);
+						continue;
 					}
 
 					const parsed = JSON.parse(message);
