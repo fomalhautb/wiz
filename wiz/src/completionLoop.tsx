@@ -2,7 +2,7 @@
 import React from 'react';
 import {render} from 'ink';
 import Completion from './components/Completion.js';
-import {spawn} from 'child_process';
+import { executeCommandInBash } from './utils/bash.js';
 
 const completionLoop = async () => {
 	while (true) {
@@ -14,17 +14,7 @@ const completionLoop = async () => {
 			break;
 		}
 
-		await (() => {
-			return new Promise((resolve, reject) => {
-				const process = spawn('bash', ['-c', ...input.split(' ')], {
-					stdio: 'inherit',
-				});
-
-				process.on('close', () => {
-					resolve(undefined);
-				});
-			});
-		})();
+		await executeCommandInBash(input);
 	}
 };
 

@@ -1,6 +1,5 @@
 import React, {useEffect, useMemo, useState} from 'react';
 import {Box, Text, useApp, useInput} from 'ink';
-import {spawn} from 'child_process';
 
 import State from '../components/Selection.js';
 import Divider from '../components/Devider.js';
@@ -8,6 +7,7 @@ import SyntaxHighlight from '../components/SyntaxHighlight.js';
 import EmptyLine from '../components/EmptyLine.js';
 import {usePromptingStore} from '../states/prompting.js';
 import TextInput from 'ink-text-input';
+import { executeCommandInBash } from '../utils/bash.js';
 
 type Props = {
 	prompt: string;
@@ -54,10 +54,7 @@ const PromptingPage = ({prompt}: Props) => {
 					onClose={index => {
 						if (index === 0) {
 							if (!generation?.command) return;
-							const parts = generation.command.split(' ');
-							const command = parts[0] || '';
-							const args = parts.slice(1);
-							spawn(command, args, {stdio: 'inherit'});
+							executeCommandInBash(generation.command);
 							exit();
 						} else if (index === 1) {
 							setCurrentState('revise');
