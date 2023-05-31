@@ -7,6 +7,7 @@ import {spawn} from 'child_process';
 import {getConfig} from './utils/config.js';
 import SetupPage from './pages/SetupPage.js';
 import PromptingPage from './pages/PromptingPage.js';
+import completionLoop from './completionLoop.js';
 
 const cli = meow(
 	`
@@ -32,31 +33,5 @@ if (!getConfig('openai_key')) {
 if (input.trim() !== '') {
 	render(<PromptingPage prompt={input} />);
 } else {
-	// TODO: handle errors
-	while (true) {
-		let input = '';
-		const {waitUntilExit} = render(<Completion onExit={i => (input = i)} />);
-		await waitUntilExit();
-
-		const spawnPromise = (cmd, args) => {
-			return new Promise((resolve, reject) => {
-				const process = spawn(cmd, args, {stdio: 'inherit'});
-
-				process.on('close', code => {
-					if (code !== 0) {
-						return reject(
-							new Error(`Command "${cmd}" exited with code ${code}`),
-						);
-					}
-					resolve(undefined);
-				});
-			});
-		};
-
-		const parts = input.split(' ');
-		const cmd = parts[0] || '';
-		const args = parts.slice(1);
-
-		await spawnPromise(cmd, args);
-	}
+	await completionLoop();
 }
