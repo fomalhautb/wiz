@@ -1,8 +1,10 @@
 {
-	"name": "wiz",
-	"version": "0.0.0",
+	"name": "wiz-cli",
+	"version": "0.0.1",
 	"license": "MIT",
-	"bin": "dist/cli.js",
+	"bin": {
+		"wiz": "dist/cli.js"
+	},
 	"type": "module",
 	"engines": {
 		"node": ">=16"
