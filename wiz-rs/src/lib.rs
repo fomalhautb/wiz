@@ -13,7 +13,7 @@ use std::{
 use thiserror::Error;
 
 use partial_sort::PartialSort;
-use tokenizers::{models::unigram::Unigram, ModelWrapper, Tokenizer};
+use tokenizers::{models::unigram::Unigram, ModelWrapper, Token, Tokenizer};
 
 pub const EOD_TOKEN_ID: TokenId = 1; // Hardcoded (for now?)
 
@@ -29,18 +29,18 @@ pub struct Hyperparameters {
 
 struct Layer {
     // pre normalization
-    ln_1_weight: ggml::Tensor,
+    norm_1_weight: ggml::Tensor,
 
     // attention
     attn_wqkv_weight: ggml::Tensor,
     attn_out_proj_weight: ggml::Tensor,
 
     // post normalization
-    ln_2_weight: ggml::Tensor,
+    norm_2_weight: ggml::Tensor,
 
     // ff
-    mlp_up_weight: ggml::Tensor,
-    mlp_down_weight: ggml::Tensor,
+    ffn_up_weight: ggml::Tensor,
+    ffn_down_weight: ggml::Tensor,
 }
 
 /// The weights for the LLaMA model. All the mutable state is split into a
@@ -52,7 +52,7 @@ pub struct Model {
     wte_weight: ggml::Tensor,
 
     // final normalization
-    ln_f_weight: ggml::Tensor,
+    norm_f_weight: ggml::Tensor,
 
     layers: Vec<Layer>,
 
@@ -132,7 +132,7 @@ pub struct InferenceParameters {
     pub top_p: f32,
     pub repeat_penalty: f32,
     pub temp: f32,
-    pub bias_tokens: TokenBias,
+    pub bias_tokens: Box<dyn TokenBias>,
 }
 
 impl Default for InferenceParameters {
@@ -144,7 +144,7 @@ impl Default for InferenceParameters {
             top_p: 0.95,
             repeat_penalty: 0.0,
             temp: 0.1,
-            bias_tokens: TokenBias::default(),
+            bias_tokens: Box::new(ConstantTokenBias::default()),
         }
     }
 }
@@ -203,7 +203,7 @@ pub struct InferenceSnapshotRef<'a> {
 
 /// A serializable snapshot of the inference process. Can be restored by calling
 /// `Model::restore_from_snapshot`. Useful for prompt caching.
-#[derive(serde::Deserialize)]
+#[derive(serde::Deserialize, Clone)]
 pub struct InferenceSnapshot {
     /// How many tokens have been stored in the memory so far.
     pub npast: usize,
@@ -237,17 +237,23 @@ impl Display for OutputToken {
     }
 }
 
-#[derive(Default, Clone, Debug, PartialEq)]
-pub struct TokenBias(Vec<(TokenId, f32)>);
+pub trait TokenBias {
+    fn get(&self, tid: TokenId) -> Option<f32>;
+}
 
-impl TokenBias {
+#[derive(Default, Clone, Debug, PartialEq)]
+pub struct ConstantTokenBias(Vec<(TokenId, f32)>);
+
+impl ConstantTokenBias {
     pub fn new(mut v: Vec<(TokenId, f32)>) -> Self {
         v.sort_by_cached_key(|(tid, _)| *tid);
         v.dedup_by_key(|(tid, _)| *tid);
         Self(v)
     }
+}
 
-    pub fn get(&self, tid: TokenId) -> Option<f32> {
+impl TokenBias for ConstantTokenBias {
+    fn get(&self, tid: TokenId) -> Option<f32> {
         self.0
             .binary_search_by_key(&tid, |(tid, _)| *tid)
             .map(|idx| self.0[idx].1)
@@ -255,7 +261,7 @@ impl TokenBias {
     }
 }
 
-impl FromStr for TokenBias {
+impl FromStr for ConstantTokenBias {
     type Err = String;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -277,11 +283,11 @@ impl FromStr for TokenBias {
                 Result::<_, String>::Ok((tid, bias))
             })
             .collect::<Result<_, _>>()?;
-        Ok(TokenBias::new(x))
+        Ok(ConstantTokenBias::new(x))
     }
 }
 
-impl std::fmt::Display for TokenBias {
+impl std::fmt::Display for ConstantTokenBias {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:?}", self.0)
     }
@@ -456,7 +462,7 @@ impl Model {
             n_heads: read_i32(&mut reader)?,
             n_layers: read_i32(&mut reader)?,
             n_vocab: read_i32(&mut reader)?,
-            ftype: read_i32(&mut reader)?,
+            ftype: read_i32(&mut reader)? % 1000,
         };
 
         println!("Hyperparameters: {:?}", hparams);
@@ -552,29 +558,31 @@ impl Model {
             let mut tensors = HashMap::new();
 
             let wte_weight = context.new_tensor_2d(wtype, n_embd, n_vocab);
-            let ln_f_weight = context.new_tensor_1d(ggml::TYPE_F32, n_embd);
+            let norm_f_weight = context.new_tensor_1d(ggml::TYPE_F32, n_embd);
 
             // map by name
             tensors.insert("transformer.wte.weight".to_owned(), wte_weight.share());
-            println!("wte shape: {:?}", (wtype, n_embd, n_vocab));
-            tensors.insert("transformer.ln_f.weight".to_owned(), ln_f_weight.share());
+            tensors.insert(
+                "transformer.norm_f.weight".to_owned(),
+                norm_f_weight.share(),
+            );
 
             let mut layers = Vec::new();
             for i in 0..n_layer {
                 let layer = Layer {
-                    ln_1_weight: context.new_tensor_1d(ggml::TYPE_F32, n_embd),
+                    norm_1_weight: context.new_tensor_1d(ggml::TYPE_F32, n_embd),
                     attn_wqkv_weight: context.new_tensor_2d(wtype, n_embd, 3 * n_embd),
                     attn_out_proj_weight: context.new_tensor_2d(wtype, n_embd, n_embd),
-                    ln_2_weight: context.new_tensor_1d(ggml::TYPE_F32, n_embd),
-                    mlp_up_weight: context.new_tensor_2d(wtype, n_embd, 4 * n_embd),
-                    mlp_down_weight: context.new_tensor_2d(wtype, 4 * n_embd, n_embd),
+                    norm_2_weight: context.new_tensor_1d(ggml::TYPE_F32, n_embd),
+                    ffn_up_weight: context.new_tensor_2d(wtype, n_embd, 4 * n_embd),
+                    ffn_down_weight: context.new_tensor_2d(wtype, 4 * n_embd, n_embd),
                 };
 
                 // map by name
                 // Layernorms
                 tensors.insert(
-                    format!("transformer.blocks.{i}.ln_1.weight"),
-                    layer.ln_1_weight.share(),
+                    format!("transformer.blocks.{i}.norm_1.weight"),
+                    layer.norm_1_weight.share(),
                 );
                 tensors.insert(
                     format!("transformer.blocks.{i}.attn.Wqkv.weight"),
@@ -585,16 +593,16 @@ impl Model {
                     layer.attn_out_proj_weight.share(),
                 );
                 tensors.insert(
-                    format!("transformer.blocks.{i}.ln_2.weight"),
-                    layer.ln_2_weight.share(),
+                    format!("transformer.blocks.{i}.norm_2.weight"),
+                    layer.norm_2_weight.share(),
                 );
                 tensors.insert(
-                    format!("transformer.blocks.{i}.mlp.mlp_up.weight"),
-                    layer.mlp_up_weight.share(),
+                    format!("transformer.blocks.{i}.ffn.up_proj.weight"),
+                    layer.ffn_up_weight.share(),
                 );
                 tensors.insert(
-                    format!("transformer.blocks.{i}.mlp.mlp_down.weight"),
-                    layer.mlp_down_weight.share(),
+                    format!("transformer.blocks.{i}.ffn.down_proj.weight"),
+                    layer.ffn_down_weight.share(),
                 );
 
                 layers.push(layer);
@@ -602,7 +610,7 @@ impl Model {
 
             Model {
                 hparams,
-                ln_f_weight,
+                norm_f_weight,
                 wte_weight,
                 layers,
                 tensors,
@@ -668,7 +676,7 @@ impl Model {
 
                 let n_dims = read_i32(&mut part_reader)?;
                 let length = read_i32(&mut part_reader)?;
-                let ftype = read_i32(&mut part_reader)?;
+                let ftype = read_i32(&mut part_reader)? % 1000;
 
                 let mut nelements = 1;
                 let mut ne = [1i64, 1i64];
@@ -927,10 +935,18 @@ impl Model {
                 // repetition penalty from CTRL paper (https://arxiv.org/abs/1909.05858)
                 // credit https://github.com/facebookresearch/llama/compare/main...shawwn:llama:main
                 let val = logit * scale;
-                logits_id.push((val, tid));
+
+                if let Some(bias) = params.bias_tokens.get(tid) {
+                    if bias > -1.0 {
+                        logits_id.push((val + bias, tid));
+                    } else {
+                        logits_id.push((-1e9, tid));
+                    }
+                } else {
+                    logits_id.push((val, tid));
+                }
             }
         }
-
         // find the top K tokens
         logits_id.partial_sort(params.top_k, |a, b| {
             // Sort descending
@@ -987,7 +1003,7 @@ impl Model {
 
                 // cur = attention_norm * cur
                 current = ctx0.op_mul(
-                    &ctx0.op_repeat(&self.layers[il].ln_1_weight, &current),
+                    &ctx0.op_repeat(&self.layers[il].norm_1_weight, &current),
                     &current,
                 )
             }
@@ -1141,19 +1157,19 @@ impl Model {
                 current = ctx0.op_norm(&input_layer);
 
                 current = ctx0.op_mul(
-                    &ctx0.op_repeat(&self.layers[il].ln_2_weight, &current),
+                    &ctx0.op_repeat(&self.layers[il].norm_2_weight, &current),
                     &current,
                 );
             }
 
             // n = self.mlp(m)
             {
-                current = ctx0.op_mul_mat(&self.layers[il].mlp_up_weight, &current);
+                current = ctx0.op_mul_mat(&self.layers[il].ffn_up_weight, &current);
 
                 // GELU
                 current = ctx0.op_gelu(&current);
 
-                current = ctx0.op_mul_mat(&self.layers[il].mlp_down_weight, &current);
+                current = ctx0.op_mul_mat(&self.layers[il].ffn_down_weight, &current);
             }
 
             // x = x + n
@@ -1166,7 +1182,7 @@ impl Model {
 
             // inpL = ln_f_g*inpL
             input_layer = ctx0.op_mul(
-                &ctx0.op_repeat(&self.ln_f_weight, &input_layer),
+                &ctx0.op_repeat(&self.norm_f_weight, &input_layer),
                 &input_layer,
             );
         }
@@ -1262,7 +1278,7 @@ impl InferenceSession {
             return Err(InferenceError::ContextFull);
         }
 
-        for batch in prompt_tokens.chunks(8) {
+        for batch in prompt_tokens.chunks(16) {
             model.evaluate(self, params.n_threads, batch);
             for &tk in batch {
                 // NOTE: No string ever tokenizes to the end of sentence. So we

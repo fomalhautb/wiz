@@ -1,0 +1,16 @@
+[package]
+name = "wiz-server"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+axum = { version = "0.6.18", features = ["macros"] }
+tokio = { version = "1.28.2", features = ["macros", "rt-multi-thread"] }
+wiz-rs = { path = "../wiz-rs" }
+log = "0.4"
+rand = { workspace = true }
+spinners = "4.1.0"
+tokenizers = "0.13.3"
+regex = "1.8.3"
