@@ -1,5 +1,6 @@
 import React, {useEffect, useMemo, useState} from 'react';
 import {Box, Text, useApp, useInput} from 'ink';
+import Spinner from 'ink-spinner';
 
 import State from '../components/Selection.js';
 import Divider from '../components/Devider.js';
@@ -83,11 +84,11 @@ const PromptingPage = ({prompt}: Props) => {
 	}
 
 	if (status === 'connecting') {
-		return <Text>...</Text>;
+		return <Text><Spinner type="simpleDots" /></Text>;
 	}
 
 	if (status === 'starting_server') {
-		return <Text color='green'>Starting backend server...</Text>;
+		<Text color='green'>Starting backend server<Spinner type="simpleDots" /></Text>;
 	}
 
 	return (
