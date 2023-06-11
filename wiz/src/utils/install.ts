@@ -3,13 +3,18 @@ import {chmod, mkdir, writeFile} from 'fs/promises';
 import * as https from 'https';
 import {homedir} from 'os';
 import path from 'path';
+import fs from 'fs';
 
-const BINARY_PATH = path.join(homedir(), '.wiz', 'server');
-const MODEL_PATH = path.join(homedir(), '.wiz', 'model.bin');
+const FOLDER_PATH = path.join(homedir(), '.wiz');
+if (!existsSync(FOLDER_PATH)) {
+	fs.mkdirSync(FOLDER_PATH);
+}
+const BINARY_PATH = path.join(FOLDER_PATH, 'server');
+const MODEL_PATH = path.join(FOLDER_PATH, 'model.bin');
 
 export const checkSetup = () => {
-	return existsSync(BINARY_PATH) && existsSync(MODEL_PATH)
-}
+	return existsSync(BINARY_PATH) && existsSync(MODEL_PATH);
+};
 
 export const downloadBinary = async () => {
 	// Download the binary from github
@@ -25,7 +30,6 @@ export const downloadBinary = async () => {
 
 	const url = `https://github.com/fomalhautb/wiz/releases/download/${version}/wiz-server-${variant}`;
 
-	console.log(`Downloading binary from ${url}...`);
 	const response = await fetch(url);
 
 	if (!response.ok) {

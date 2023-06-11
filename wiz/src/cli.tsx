@@ -15,7 +15,7 @@ const cli = meow(
 
 const input = cli.input.join(' ');
 
-if (checkSetup()) {
+if (!checkSetup()) {
 	const {waitUntilExit} = render(<DownloadPage />);
 	await waitUntilExit();
 }
