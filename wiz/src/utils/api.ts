@@ -1,6 +1,4 @@
 import {spawn} from 'child_process';
-import {homedir} from 'os';
-import path from 'path';
 import {CompletionResult, PromptingResult} from '../types.js';
 import {createParser, ParsedEvent, ReconnectInterval} from 'eventsource-parser';
 
@@ -8,32 +6,31 @@ const NUM_RETRY = 3;
 const WAIT_TIME = 1000;
 
 export const startServer = async () => {
-	const child = spawn(path.join(homedir(), '.wiz/server'), [], {
+	spawn('.wiz/server', [], {
 		detached: true,
 		stdio: 'ignore',
 	});
-	child.unref();
 };
 
 export const generatePromptingStream = async (
 	prompts: string[],
 	generations: PromptingResult[],
-	callback: (generation: any) => void, // TODO: handle error callback
+	callback: (generation: any, status: 'connecting' | 'error' | 'success') => void,
 ) => {
 	if (prompts.length === 0 || prompts.length - 1 != generations.length) {
 		throw new Error('Invalid prompts or generations');
 	}
 
-	let query = '';
+	let query = ''
 	if (prompts.length > 1) {
 		for (const [i, prompt] of prompts.entries()) {
-			query += `${i + 1}. ${prompt}`;
+			query += `${i+1}. ${prompt}`;
 		}
 	} else {
-		query += prompts[0];
+		query += prompts[0]
 	}
 
-	let res;
+	let res: Response | null = null;
 	for (let retry = 0; retry < NUM_RETRY; retry++) {
 		try {
 			res = await fetch('http://localhost:8085/api/completions', {
@@ -45,21 +42,24 @@ export const generatePromptingStream = async (
 		} catch (e) {
 			if (retry == 0) {
 				startServer();
-				console.log('Starting server...');
-			} else {
-				console.log(`Connecting... (${retry})`);
 			}
+			callback(null, 'connecting');
 			await new Promise(r => setTimeout(r, WAIT_TIME));
 		}
+	}
+
+	if (res === null) {
+		callback(null, 'error');
+		return;
 	}
 
 	const onParse = (event: ParsedEvent | ReconnectInterval) => {
 		if (event.type === 'event') {
 			const data = event.data;
 			const json = JSON.parse(data);
-			callback(json);
+			callback(json, 'success');
 		}
-	};
+	}
 
 	// https://vercel.com/blog/gpt-3-app-next-js-vercel-edge-functions
 	// stream response (SSE) may be fragmented into multiple chunks
