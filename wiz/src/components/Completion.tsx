@@ -1,13 +1,13 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {Box, Text, useApp, useInput} from 'ink';
-import TextInput from 'ink-text-input';
 import {generateCompletion} from '../utils/openai.js';
+import TextInput from './TextInput.js';
 
 type Props = {
 	onExit: (input: string) => void;
 };
 
-type State = 'typing' | 'generating';
+type State = 'typing' | 'generating' | 'finished';
 
 const Completion = ({onExit}: Props) => {
 	const [command, setCommand] = useState('');
@@ -19,7 +19,7 @@ const Completion = ({onExit}: Props) => {
 	useInput((input, key) => {
 		if (key.return) {
 			onExit(command);
-			exit();
+			setCurrentState('finished')
 		} else if (key.tab) {
 			setCommand(prev => prev + suggestion);
 		}
@@ -43,14 +43,28 @@ const Completion = ({onExit}: Props) => {
 		);
 	});
 
-	return (
-		<Box>
-			<Text>{'>>> '}</Text>
-			<TextInput value={command} onChange={setCommand} />
-			{currentState === 'generating' ? <Text color='grey'>...</Text> : null}
-			<Text color="grey">{suggestion}</Text>
-		</Box>
-	);
+	useEffect(() => {
+		if (currentState === 'finished') {
+			exit()
+		}
+	}, [currentState])
+
+	if (currentState == 'finished') {
+		return (
+			<Box>
+				<Text>{'>>> ' + command}</Text>
+			</Box>
+		);
+	} else {
+		return (
+			<Box>
+				<Text>{'>>> '}</Text>
+				<TextInput value={command} onChange={setCommand} />
+				{currentState === 'generating' ? <Text color="grey">...</Text> : null}
+				<Text color="grey">{suggestion}</Text>
+			</Box>
+		);
+	}
 };
 
 export default Completion;

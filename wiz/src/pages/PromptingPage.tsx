@@ -6,8 +6,8 @@ import Divider from '../components/Devider.js';
 import SyntaxHighlight from '../components/SyntaxHighlight.js';
 import EmptyLine from '../components/EmptyLine.js';
 import {usePromptingStore} from '../states/prompting.js';
-import TextInput from 'ink-text-input';
 import { executeCommandInBash } from '../utils/bash.js';
+import TextInput from '../components/TextInput.js';
 
 type Props = {
 	prompt: string;

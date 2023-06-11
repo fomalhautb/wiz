@@ -1,8 +1,8 @@
 import React, {useState} from 'react';
 import {Box, Text, useApp, useInput} from 'ink';
-import TextInput from 'ink-text-input';
 import {checkApiKey} from '../utils/openai.js';
 import {setConfig} from '../utils/config.js';
+import TextInput from '../components/TextInput.js';
 
 const SetupPage = () => {
 	const [apiKey, setApiKey] = useState('');
