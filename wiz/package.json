@@ -18,7 +18,9 @@
 		"dist"
 	],
 	"dependencies": {
+		"@microsoft/fetch-event-source": "^2.0.1",
 		"cli-highlight": "^2.1.11",
+		"eventsource-parser": "^1.0.0",
 		"ink": "^4.1.0",
 		"meow": "^11.0.0",
 		"openai": "^3.2.1",

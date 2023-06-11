@@ -89,12 +89,12 @@ const PromptingPage = ({prompt}: Props) => {
 
 			<Divider text={'Generated Command'} />
 			<EmptyLine />
-			<SyntaxHighlight code={generation?.command || '...'} language={'bash'} />
+			<SyntaxHighlight code={generation?.command?.trim() || '...'} language={'bash'} />
 			<EmptyLine />
 
 			<Divider text={'Explainations'} />
 			<EmptyLine />
-			<Text>{generation?.explaination || '...'}</Text>
+			<Text>{generation?.explaination?.trim() || '...'}</Text>
 			<EmptyLine />
 
 			<Divider />

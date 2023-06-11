@@ -1,5 +1,5 @@
 import {create} from 'zustand';
-import {generatePromptingStream} from '../utils/openai.js';
+import {generatePromptingStream} from '../utils/api.js';
 import {PromptingResult} from '../types.js';
 
 type PromptingState = {
@@ -26,22 +26,32 @@ export const usePromptingStore = create<PromptingState>((set, get) => ({
 		}));
 	},
 	generate: () => {
+		const generation = {command: '', explaination: ''};
 		set({
 			isLoading: true,
 			isError: false,
 			error: '',
-			generations: [...get().generations, {command: '', explaination: ''}],
+			generation,
+			generations: [...get().generations, generation],
 		});
 
 		generatePromptingStream(
 			get().prompts,
 			get().generations.slice(0, -1),
-			generation => {
-				if (generation) {
+			result => {
+				if (result?.type === 'command' || result?.type === 'explanation') {
+					const newGeneration = {...(get().generation as PromptingResult)};
+
+					if (result.type === 'command') {
+						newGeneration.command += result.text || '';
+					} else {
+						newGeneration.explaination += result.text || '';
+					}
+
 					set({
 						isLoading: true,
-						generation,
-						generations: [...get().generations.slice(0, -1), generation],
+						generation: newGeneration,
+						generations: [...get().generations.slice(0, -1), newGeneration],
 					});
 				}
 			},
