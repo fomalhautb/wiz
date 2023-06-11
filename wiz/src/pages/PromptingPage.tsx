@@ -92,10 +92,12 @@ const PromptingPage = ({prompt}: Props) => {
 	}
 
 	if (status === 'starting_server') {
-		<Text color="green">
-			Starting backend server
-			<Spinner type="simpleDots" />
-		</Text>;
+		return (
+			<Text color="green">
+				Starting backend server
+				<Spinner type="simpleDots" />
+			</Text>
+		);
 	}
 
 	return (
