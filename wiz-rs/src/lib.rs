@@ -13,7 +13,7 @@ use std::{
 use thiserror::Error;
 
 use partial_sort::PartialSort;
-use tokenizers::{models::unigram::Unigram, ModelWrapper, Token, Tokenizer};
+use tokenizers::{models::unigram::Unigram, ModelWrapper, Tokenizer};
 
 pub const EOD_TOKEN_ID: TokenId = 1; // Hardcoded (for now?)
 
@@ -221,7 +221,7 @@ pub struct InferenceSnapshot {
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum OutputToken {
-    Token(String),
+    Token(String, bool),
     EndOfText,
 }
 impl Display for OutputToken {
@@ -230,7 +230,7 @@ impl Display for OutputToken {
             f,
             "{}",
             match self {
-                OutputToken::Token(t) => t,
+                OutputToken::Token(t, _) => t,
                 OutputToken::EndOfText => "",
             }
         )
@@ -464,8 +464,6 @@ impl Model {
             n_vocab: read_i32(&mut reader)?,
             ftype: read_i32(&mut reader)? % 1000,
         };
-
-        println!("Hyperparameters: {:?}", hparams);
 
         load_progress_callback(LoadProgress::HyperparametersLoaded(&hparams));
 
@@ -921,7 +919,7 @@ impl Model {
         &self,
         session: &InferenceSession,
         params: &InferenceParameters,
-        rng: &mut impl rand::Rng,
+        _rng: &mut impl rand::Rng,
     ) -> TokenId {
         let logits = &session.last_logits;
         let n_logits = logits.len();
@@ -1285,6 +1283,7 @@ impl InferenceSession {
                 // can just return the id here.
                 if let Err(e) = callback(OutputToken::Token(
                     tokenizer.decode(vec![tk], true).unwrap(),
+                    false,
                 )) {
                     return Err(InferenceError::UserCallback(Box::new(e)));
                 }
@@ -1321,7 +1320,10 @@ impl InferenceSession {
         Ok(if next_token as TokenId == EOD_TOKEN_ID {
             OutputToken::EndOfText
         } else {
-            OutputToken::Token(tokenizer.decode(vec![next_token], true).unwrap().to_owned())
+            OutputToken::Token(
+                tokenizer.decode(vec![next_token], true).unwrap().to_owned(),
+                true,
+            )
         })
     }
 
@@ -1367,12 +1369,8 @@ impl InferenceSession {
             tokens_processed += 1;
 
             match tk {
-                OutputToken::Token(x) => match x.as_str() {
-                    "<|USER|>" => break,
-                    _ => {}
-                },
+                OutputToken::Token(_, _) => {}
                 OutputToken::EndOfText => break,
-                _ => {}
             }
         }
         stats.predict_duration = start_at.elapsed().unwrap();

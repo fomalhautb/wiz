@@ -1,6 +1,5 @@
 use std::cell::RefCell;
 use std::rc::Rc;
-use std::sync::Arc;
 use std::{convert::Infallible, io::Write};
 
 use cli_args::CLI_ARGS;
@@ -270,7 +269,7 @@ fn main() {
             ..inference_params
         };
 
-        println!("Starting inference with prompt: {prompt}");
+        log::info!("Starting inference with prompt: {prompt}");
 
         let res = session.feed_prompt::<Infallible>(
             &model,
