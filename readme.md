@@ -43,10 +43,10 @@ We welcome contributions! If you'd like to contribute, feel free to fork the rep
 
 ## Roadmap
 
-- [ ] Cross-Platform Compatibility: Expand support for Windows and Linux, as Wiz currently only runs on macOS.
+- [ ] Cross-Platform Compatibility: Expand support for Windows and Linux, as Wiz currently only runs on macOS.
 - [ ] Improved Suggestions: Enhance the suggestion model to provide more accurate and diverse command possibilities.
 - [ ] Inactivity Server Shutdown: Implement a feature to stop the inference server after a period of inactivity to conserve system resources.
-- [ ] Support for Command History: Implement a feature where Wiz can recall and explain previous commands.
+- [ ] Support for Command History: Implement a feature where Wiz can recall and explain previous commands.
 - [ ] Machine-learning powered command correction: Implement a feature where Wiz can correct commands executed by the user.
 - [ ] Command Completion: Implement a feature where Wiz can complete partial commands entered by the user.
 
