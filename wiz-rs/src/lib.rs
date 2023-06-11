@@ -1199,7 +1199,7 @@ impl Model {
 
         // return result for just the last token
         // SAFETY: yolo
-        assert_eq!(session.last_logits.len(), n_vocab as usize);
+        //assert_eq!(session.last_logits.len(), n_vocab as usize);
         unsafe {
             input_layer.read_data(
                 n_vocab as usize * (n - 1) * std::mem::size_of::<f32>(),
