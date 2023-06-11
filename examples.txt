@@ -1,5 +1,36 @@
+# eval
+
 node.js install express package
-list all git authors with their number of commits
+> npm install express
+> npm install -g express
+> npm install express --save
+
 docker stop and remove all containers
+> docker stop $(docker ps -a -q) && docker rm $(docker ps -a -q)
+
 git load updates from master branch of origin
+> git pull origin master
+> git pull origin master --allow-unrelated-histories
+> git fetch origin master:master
+
 kubernetes get pods in namespace production
+> kubectl get pods -n production
+> kubectl get pods --namespace=production
+
+list only folders in cwd with size
+> ls -d */ | xargs du -sh
+> du -h -d 0 */
+
+cross compile the cargo project for apple x64
+> cargo build --target x86_64-apple-darwin
+
+show line count of all js files in current directory, excluding node modules
+> find . -name "*.js" -not -path "./node_modules/*" | xargs wc -l
+
+make api request to worldtimeapi.org
+> curl http://worldtimeapi.org/api/ip
+
+# train
+
+list all git authors with their number of commits
+> git shortlog -sn --all --no-merges
