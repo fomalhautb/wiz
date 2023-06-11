@@ -47,7 +47,7 @@ export async function downloadModel() {
 	}
 
 	const url =
-		'https://huggingface.co/lukasmoeller/replit-code-v1-3b-ggml/resolve/main/ggml-model-q4-0.bin';
+		'https://huggingface.co/lukasmoeller/replit-code-codeinstruct-v1-3b-ggml/resolve/main/ggml-model-q4-0.bin';
 
 	const resp = await fetch(url, {
 		redirect: 'manual',
