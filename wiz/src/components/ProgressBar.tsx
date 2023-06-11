@@ -2,12 +2,12 @@ import React, {useState} from 'react';
 import {Box, type DOMElement, Text, measureElement} from 'ink';
 import figures from 'figures';
 
-export type ProgressBarProps = {
+type ProgressBarProps = {
 	value: number;
-    color?: string;
+	color?: string;
 };
 
-export function ProgressBar({value, color}: ProgressBarProps) {
+const ProgressBar = ({value, color}: ProgressBarProps) => {
 	const [width, setWidth] = useState(0);
 
 	// eslint-disable-next-line @typescript-eslint/ban-types
@@ -28,16 +28,14 @@ export function ProgressBar({value, color}: ProgressBarProps) {
 	return (
 		<Box ref={setRef} flexGrow={1} minWidth={0}>
 			{complete > 0 && (
-				<Text color={color || 'green'}>
-					{figures.square.repeat(complete)}
-				</Text>
+				<Text color={color || 'green'}>{figures.square.repeat(complete)}</Text>
 			)}
 
 			{remaining > 0 && (
-				<Text dimColor>
-					{figures.squareLightShade.repeat(remaining)}
-				</Text>
+				<Text dimColor>{figures.squareLightShade.repeat(remaining)}</Text>
 			)}
 		</Box>
 	);
-}
+};
+
+export default ProgressBar;

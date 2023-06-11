@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {Text, Box} from 'ink';
 import { downloadBinary, downloadModel } from '../utils/install.js';
-import { ProgressBar } from '../components/Progressbar.js';
+import ProgressBar from '../components/ProgressBar.js';
 
 const SetupPage = () => {
 	const [percentage, setPercentage] = useState(0);
