@@ -4,13 +4,19 @@ import * as https from 'https';
 import {homedir} from 'os';
 import path from 'path';
 
-export async function downloadBinary() {
+const BINARY_PATH = path.join(homedir(), '.wiz', 'server');
+const MODEL_PATH = path.join(homedir(), '.wiz', 'model.bin');
+
+export const checkSetup = () => {
+	return existsSync(BINARY_PATH) && existsSync(MODEL_PATH)
+}
+
+export const downloadBinary = async () => {
 	// Download the binary from github
 	// e.g. https://github.com/fomalhautb/wiz/releases/download/v0.0.0-alpha.0/wiz-server-darwin-arm64
-	// Save it to ~/.wiz/wiz-server
+	// Save it to ~/.wiz/server
 
-	const binaryPath = path.join(homedir(), '.wiz', 'wiz-server');
-	if (existsSync(binaryPath)) {
+	if (existsSync(BINARY_PATH)) {
 		return;
 	}
 
@@ -29,20 +35,21 @@ export async function downloadBinary() {
 	const buffer = await response.arrayBuffer();
 	const binary = new Uint8Array(buffer);
 
-	await mkdir(path.dirname(binaryPath), {recursive: true});
-	await writeFile(binaryPath, binary);
+	await mkdir(path.dirname(BINARY_PATH), {recursive: true});
+	await writeFile(BINARY_PATH, binary);
 
 	// chmod +x ~/.wiz/wiz-server
-	await chmod(binaryPath, 0o755);
-}
+	await chmod(BINARY_PATH, 0o755);
+};
 
-export async function downloadModel() {
+export const downloadModel = async (
+	percentageCallback?: (percentage: number) => void,
+) => {
 	// Download model from huggingface
 	// e.g. https://huggingface.co/lukasmoeller/replit-code-v1-3b-ggml/resolve/main/ggml-model-q4-0.bin
 	// Save it to ~/.wiz/model.bin
 
-	const modelPath = path.join(homedir(), '.wiz', 'model.bin');
-	if (existsSync(modelPath)) {
+	if (existsSync(MODEL_PATH)) {
 		return;
 	}
 
@@ -59,8 +66,7 @@ export async function downloadModel() {
 
 	const redirectUrl = resp.headers.get('location') ?? '';
 
-	console.log(`Downloading model from ${url}...`);
-	const file = createWriteStream(modelPath);
+	const file = createWriteStream(MODEL_PATH);
 	await new Promise((resolve, reject) =>
 		https.get(redirectUrl, function (response) {
 			response.pipe(file);
@@ -73,7 +79,7 @@ export async function downloadModel() {
 			response.on('data', chunk => {
 				total += chunk.length;
 				const percent = Math.round((total / totalSize) * 100);
-				process.stdout.write(`\rDownloading model: ${percent}%`);
+				percentageCallback?.(percent);
 			});
 
 			file.on('finish', () => {
@@ -83,4 +89,4 @@ export async function downloadModel() {
 			});
 		}),
 	);
-}
+};
