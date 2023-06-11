@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import {Box, Text, useApp, useInput} from 'ink';
-import {generateCompletion} from '../utils/openai.js';
+import {generateCompletion} from '../utils/api.js';
 import TextInput from './TextInput.js';
 
 type Props = {

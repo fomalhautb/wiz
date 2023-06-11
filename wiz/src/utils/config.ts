@@ -3,12 +3,7 @@ import {homedir} from 'os';
 import path from 'path';
 
 const CONFIG_TEMPLATE = {
-	openai_key: {
-		type: 'string',
-		default: null,
-		nullable: true,
-	},
-	openai_org: {
+	model: {
 		type: 'string',
 		default: null,
 		nullable: true,
@@ -41,7 +36,6 @@ const loadConfig = () => {
 	if (!fs.existsSync(CONFIG_PATH)) {
 		return DEFAULT_CONFIG;
 	}
-
 	const config = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf-8'));
 	validateConfig(config);
 
