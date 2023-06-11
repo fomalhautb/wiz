@@ -56,11 +56,12 @@ function TextInput({
 	highlightPastedText = false,
 	showCursor = true,
 	onChange,
-	onSubmit
+	onSubmit,
 }: Props) {
 	const [state, setState] = useState({
+		value: originalValue || '',
 		cursorOffset: (originalValue || '').length,
-		cursorWidth: 0
+		cursorWidth: 0,
 	});
 
 	const {cursorOffset, cursorWidth} = state;
@@ -73,10 +74,14 @@ function TextInput({
 
 			const newValue = originalValue || '';
 
-			if (previousState.cursorOffset > newValue.length - 1) {
+			if (
+				previousState.cursorOffset > newValue.length - 1 ||
+				previousState.value.length === previousState.cursorOffset
+			) {
 				return {
+					value: newValue,
 					cursorOffset: newValue.length,
-					cursorWidth: 0
+					cursorWidth: 0,
 				};
 			}
 
@@ -177,15 +182,16 @@ function TextInput({
 			}
 
 			setState({
+				value: nextValue,
 				cursorOffset: nextCursorOffset,
-				cursorWidth: nextCursorWidth
+				cursorWidth: nextCursorWidth,
 			});
 
 			if (nextValue !== originalValue) {
 				onChange(nextValue);
 			}
 		},
-		{isActive: focus}
+		{isActive: focus},
 	);
 
 	return (

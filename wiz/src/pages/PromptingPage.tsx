@@ -87,7 +87,7 @@ const PromptingPage = ({prompt}: Props) => {
 			))}
 			<EmptyLine />
 
-			<Divider text={'Generated Query'} />
+			<Divider text={'Generated Command'} />
 			<EmptyLine />
 			<SyntaxHighlight code={generation?.command || '...'} language={'bash'} />
 			<EmptyLine />
