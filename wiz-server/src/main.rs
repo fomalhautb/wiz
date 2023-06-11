@@ -10,7 +10,10 @@ use sha2::{Digest, Sha256};
 use std::{
     cell::RefCell,
     convert::Infallible,
+    error::Error,
+    io,
     net::SocketAddr,
+    path::PathBuf,
     rc::Rc,
     sync::{Arc, Mutex},
 };
@@ -26,15 +29,14 @@ struct AppState {
 }
 
 // Resolve to ~/.wiz
-fn get_wiz_home_dir() -> std::path::PathBuf {
-    let mut home_dir = dirs::home_dir().expect("Could not find home directory");
+fn get_wiz_home_dir() -> Result<PathBuf, Box<dyn Error>> {
+    let mut home_dir = dirs::home_dir().ok_or("Could not find home directory")?;
     home_dir.push(".wiz");
-    home_dir
+    Ok(home_dir)
 }
 
-fn load_model() -> (wiz_rs::Model, Tokenizer) {
-    // model is located at ~/.wiz/model.bin
-    let model_path = get_wiz_home_dir().join("model.bin");
+fn load_model() -> Result<(wiz_rs::Model, Tokenizer), Box<dyn Error>> {
+    let model_path = get_wiz_home_dir()?.join("model.bin");
     let (model, vocab) = wiz_rs::Model::load(&model_path, 512 as i32, |progress| {
         use wiz_rs::LoadProgress;
         match progress {
@@ -90,7 +92,7 @@ fn load_model() -> (wiz_rs::Model, Tokenizer) {
 
     log::info!("Model fully loaded!");
 
-    (model, vocab)
+    Ok((model, vocab))
 }
 
 #[derive(Debug)]
@@ -116,19 +118,24 @@ fn load_prompt_snapshot(
     prompt_prefix: &str,
     model: &wiz_rs::Model,
     vocab: &Tokenizer,
-) -> InferenceSnapshot {
+) -> Result<InferenceSnapshot, Box<dyn Error>> {
     // Check if prompt snapshot exists at ~/.wiz/snapshots/{hash}.bin
     let mut prompt_hasher = Sha256::new();
     prompt_hasher.update(prompt_prefix.as_bytes());
     let prompt_hash = prompt_hasher.finalize();
     let prompt_hash_hex = &format!("{:x}", prompt_hash)[0..8];
 
-    let path = get_wiz_home_dir()
+    let path = get_wiz_home_dir()?
         .join("snapshots")
         .join(format!("{}.bin", prompt_hash_hex));
 
     if path.exists() {
-        return InferenceSnapshot::load_from_disk(path).unwrap();
+        return Ok(InferenceSnapshot::load_from_disk(path).map_err(|err| {
+            io::Error::new(
+                io::ErrorKind::Other,
+                format!("Could not load prompt snapshot: {err}"),
+            )
+        })?);
     }
 
     // If not, generate it
@@ -171,7 +178,12 @@ fn load_prompt_snapshot(
             }
         }
     }
-    InferenceSnapshot::load_from_disk(path).unwrap()
+    Ok(InferenceSnapshot::load_from_disk(path).map_err(|err| {
+        io::Error::new(
+            io::ErrorKind::Other,
+            format!("Could not load prompt snapshot: {err}"),
+        )
+    })?)
 }
 
 #[derive(Default, Clone, Debug, PartialEq)]
@@ -303,8 +315,8 @@ async fn main() {
         .init();
 
     let (req_tx, req_rx) = flume::unbounded::<InferenceRequest>();
-    let (model, vocab) = load_model();
-    let snapshot = load_prompt_snapshot(PROMPT_PREFIX, &model, &vocab);
+    let (model, vocab) = load_model().unwrap();
+    let snapshot = load_prompt_snapshot(PROMPT_PREFIX, &model, &vocab).unwrap();
     let _inference_join_handle = spawn_blocking(move || {
         inference_worker(req_rx, model, vocab, snapshot);
     });
