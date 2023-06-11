@@ -16,6 +16,8 @@ type Props = {
 type State = 'selecting' | 'revise' | 'executed';
 
 const PromptingPage = ({prompt}: Props) => {
+	const status = usePromptingStore(state => state.status);
+	const errorMessage = usePromptingStore(state => state.errorMessage);
 	const generation = usePromptingStore(state => state.generation);
 	const prompts = usePromptingStore(state => state.prompts);
 	const addPrompt = usePromptingStore(state => state.addPrompt);
@@ -75,6 +77,18 @@ const PromptingPage = ({prompt}: Props) => {
 			return null;
 		}
 	}, [currentState, revisedPrompt, generation]);
+
+	if (status === 'error') {
+		return <Text color='red'>Error: {errorMessage}</Text>;
+	}
+
+	if (status === 'connecting') {
+		return <Text>...</Text>;
+	}
+
+	if (status === 'starting_server') {
+		return <Text color='green'>Starting backend server...</Text>;
+	}
 
 	return (
 		<Box flexDirection="column">

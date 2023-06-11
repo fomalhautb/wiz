@@ -1,4 +1,6 @@
 import {spawn} from 'child_process';
+import { homedir } from 'os';
+import path from 'path';
 import {CompletionResult, PromptingResult} from '../types.js';
 import {createParser, ParsedEvent, ReconnectInterval} from 'eventsource-parser';
 
@@ -6,7 +8,7 @@ const NUM_RETRY = 3;
 const WAIT_TIME = 1000;
 
 export const startServer = async () => {
-	spawn('.wiz/server', [], {
+	spawn(path.join(homedir(), '.wiz', 'server'), [], {
 		detached: true,
 		stdio: 'ignore',
 	});
@@ -15,19 +17,22 @@ export const startServer = async () => {
 export const generatePromptingStream = async (
 	prompts: string[],
 	generations: PromptingResult[],
-	callback: (generation: any, status: 'connecting' | 'error' | 'success') => void,
+	callback: (
+		generation: any,
+		status: 'error' | 'success' | 'connected' | 'finished' | 'starting_server',
+	) => void,
 ) => {
 	if (prompts.length === 0 || prompts.length - 1 != generations.length) {
 		throw new Error('Invalid prompts or generations');
 	}
 
-	let query = ''
+	let query = '';
 	if (prompts.length > 1) {
 		for (const [i, prompt] of prompts.entries()) {
-			query += `${i+1}. ${prompt}`;
+			query += `${i + 1}. ${prompt}`;
 		}
 	} else {
-		query += prompts[0]
+		query += prompts[0];
 	}
 
 	let res: Response | null = null;
@@ -42,11 +47,13 @@ export const generatePromptingStream = async (
 		} catch (e) {
 			if (retry == 0) {
 				startServer();
+				callback(null, 'starting_server');
 			}
-			callback(null, 'connecting');
 			await new Promise(r => setTimeout(r, WAIT_TIME));
 		}
 	}
+
+	callback(null, 'connected');
 
 	if (res === null) {
 		callback(null, 'error');
@@ -59,7 +66,7 @@ export const generatePromptingStream = async (
 			const json = JSON.parse(data);
 			callback(json, 'success');
 		}
-	}
+	};
 
 	// https://vercel.com/blog/gpt-3-app-next-js-vercel-edge-functions
 	// stream response (SSE) may be fragmented into multiple chunks
@@ -71,6 +78,8 @@ export const generatePromptingStream = async (
 	for await (const chunk of res.body as any) {
 		parser.feed(decoder.decode(chunk));
 	}
+
+	callback(null, 'finished');
 };
 
 export const generateCompletion = async (

@@ -3,9 +3,8 @@ import {generatePromptingStream} from '../utils/api.js';
 import {PromptingResult} from '../types.js';
 
 type PromptingState = {
-	isLoading: boolean;
-	isError: boolean;
-	error: string;
+	status: 'connecting' | 'starting_server' | 'error' | 'generating' | 'none';
+	errorMessage?: string;
 	generation: PromptingResult | null;
 	generations: PromptingResult[];
 	prompts: string[];
@@ -14,9 +13,8 @@ type PromptingState = {
 };
 
 export const usePromptingStore = create<PromptingState>((set, get) => ({
-	isLoading: false,
-	isError: false,
-	error: '',
+	status: 'none',
+	errorMessage: undefined,
 	generation: null,
 	generations: [],
 	prompts: [],
@@ -28,9 +26,7 @@ export const usePromptingStore = create<PromptingState>((set, get) => ({
 	generate: () => {
 		const generation = {command: '', explanation: ''};
 		set({
-			isLoading: true,
-			isError: false,
-			error: '',
+			status: 'connecting',
 			generation,
 			generations: [...get().generations, generation],
 		});
@@ -38,7 +34,19 @@ export const usePromptingStore = create<PromptingState>((set, get) => ({
 		generatePromptingStream(
 			get().prompts,
 			get().generations.slice(0, -1),
-			result => {
+			(result, status) => {
+				if (status === 'error') {
+					set({status: 'error', errorMessage: 'Failed to connect to server'});
+				} else if (status === 'starting_server') {
+					set({status: 'starting_server'});
+				} else if (status === 'connected') {
+					set({status: 'generating'});
+				} else if (status === 'finished') {
+					set({status: 'none'});
+					return;
+				}
+
+
 				if (result?.type === 'command' || result?.type === 'explanation') {
 					const newGeneration = {...(get().generation as PromptingResult)};
 
@@ -49,7 +57,6 @@ export const usePromptingStore = create<PromptingState>((set, get) => ({
 					}
 
 					set({
-						isLoading: true,
 						generation: newGeneration,
 						generations: [...get().generations.slice(0, -1), newGeneration],
 					});
