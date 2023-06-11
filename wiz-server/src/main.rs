@@ -202,10 +202,12 @@ impl TokenBias for CustomTokenBias {
     }
 }
 
-fn inference_worker(rx: flume::Receiver<InferenceRequest>) {
-    let (mut model, vocab) = load_model();
-    let snapshot = load_prompt_snapshot(PROMPT_PREFIX, &model, &vocab);
-
+fn inference_worker(
+    rx: flume::Receiver<InferenceRequest>,
+    mut model: wiz_rs::Model,
+    vocab: Tokenizer,
+    snapshot: InferenceSnapshot,
+) {
     while let Ok(req) = rx.recv() {
         let text: Rc<RefCell<String>> = Rc::new(RefCell::new("".to_string()));
         let inference_params = InferenceParameters {
@@ -301,8 +303,10 @@ async fn main() {
         .init();
 
     let (req_tx, req_rx) = flume::unbounded::<InferenceRequest>();
+    let (model, vocab) = load_model();
+    let snapshot = load_prompt_snapshot(PROMPT_PREFIX, &model, &vocab);
     let _inference_join_handle = spawn_blocking(move || {
-        inference_worker(req_rx);
+        inference_worker(req_rx, model, vocab, snapshot);
     });
 
     let shared_state = Arc::new(Mutex::new(AppState {
