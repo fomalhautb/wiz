@@ -339,28 +339,24 @@ async fn sse_handler(
     Extension(state): Extension<Arc<Mutex<AppState>>>,
     Json(payload): Json<CompletionRequest>,
 ) -> Sse<impl Stream<Item = Result<Event, Infallible>>> {
-    struct Guard {}
-
-    impl Drop for Guard {
-        fn drop(&mut self) {
-            log::info!("Stream closed");
-        }
-    }
-
     let query = payload.query;
 
     let mut saw_triple_backtick = false;
 
     let stream = async_stream::stream! {
-        let _guard = Guard {};
-
         let (tx, rx) = flume::unbounded::<InferenceResult>();
-        state.lock().unwrap().inference_tx.send(InferenceRequest {
+        match state.lock().unwrap().inference_tx.send(InferenceRequest {
             query: query.to_string(),
             response_sender: tx,
-        }).unwrap();
+        }) {
+            Ok(_) => {
 
-
+            }
+            Err(_) => {
+                log::error!("Could not send inference request");
+                return;
+            }
+        }
 
         loop {
             let res = rx.recv();
