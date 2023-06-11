@@ -1,0 +1,5 @@
+node.js install express package
+list all git authors with their number of commits
+docker stop and remove all containers
+git load updates from master branch of origin
+kubernetes get pods in namespace production
