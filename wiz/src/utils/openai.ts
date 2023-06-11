@@ -8,7 +8,7 @@ You are a CLI assistant. You help the user to generate commands from natrual lan
 The output format:
 {
   "command": "string. the generated command",
-  "explaination": "string. the explaination of each part of the command. Explaination should be a string, NOT json. Use line breaks to separate each part of the explaination.",
+  "explanation": "string. the explanation of each part of the command. Explanation should be a string, NOT json. Use line breaks to separate each part of the explanation.",
 }
 Note: the user is using a Mac.
 `;
@@ -45,13 +45,13 @@ const setUpOpenai = () => {
 	return new OpenAIApi(configuration);
 };
 
-const chatCompletionStream = (
+const chatCompletionStream = async (
 	messages: ChatCompletionRequestMessage[],
 	callback: (generation: string | undefined) => void,
 ) => {
 	const openai = setUpOpenai();
 
-	openai
+	await openai
 		.createChatCompletion(
 			{
 				model: 'gpt-3.5-turbo',
@@ -85,14 +85,12 @@ const chatCompletionStream = (
 const chatCompletion = async messages => {
 	const openai = setUpOpenai();
 
-	const res = await openai.createChatCompletion(
-		{
-			model: 'gpt-3.5-turbo',
-			messages,
-			max_tokens: 500,
-			temperature: 0,
-		},
-	);
+	const res = await openai.createChatCompletion({
+		model: 'gpt-3.5-turbo',
+		messages,
+		max_tokens: 500,
+		temperature: 0,
+	});
 
 	return res.data.choices[0]?.message?.content;
 };
@@ -109,15 +107,15 @@ const parsePromptingResult = (text: string): PromptingResult | undefined => {
 		parsed.command = '';
 	}
 
-	if (typeof parsed.explaination === 'object') {
-		parsed.explaination = JSON.stringify(parsed.explaination);
-	} else if (typeof parsed.explaination !== 'string') {
-		parsed.explaination = '';
+	if (typeof parsed.explanation === 'object') {
+		parsed.explanation = JSON.stringify(parsed.explanation);
+	} else if (typeof parsed.explanation !== 'string') {
+		parsed.explanation = '';
 	}
 
 	return {
 		command: parsed.command,
-		explaination: parsed.explaination,
+		explanation: parsed.explanation,
 	};
 };
 

@@ -1,8 +1,8 @@
 export type PromptingResult = {
 	command: string;
-  explaination: string;
+	explanation: string;
 };
 
 export type CompletionResult = {
-  completion: string;
-}
+	completion: string;
+};

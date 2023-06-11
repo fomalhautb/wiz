@@ -1,4 +1,0 @@
-### Instruction:
-Convert to bash command, provide detailed explanation in a second paragraph
-
-### Input:

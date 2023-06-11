@@ -6,7 +6,7 @@ import Divider from '../components/Devider.js';
 import SyntaxHighlight from '../components/SyntaxHighlight.js';
 import EmptyLine from '../components/EmptyLine.js';
 import {usePromptingStore} from '../states/prompting.js';
-import { executeCommandInBash } from '../utils/bash.js';
+import {executeCommandInBash} from '../utils/bash.js';
 import TextInput from '../components/TextInput.js';
 
 type Props = {
@@ -92,9 +92,9 @@ const PromptingPage = ({prompt}: Props) => {
 			<SyntaxHighlight code={generation?.command || '...'} language={'bash'} />
 			<EmptyLine />
 
-			<Divider text={'Explainations'} />
+			<Divider text={'Explanation'} />
 			<EmptyLine />
-			<Text>{generation?.explaination || '...'}</Text>
+			<Text>{generation?.explanation || '...'}</Text>
 			<EmptyLine />
 
 			<Divider />

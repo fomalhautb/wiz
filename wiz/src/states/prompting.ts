@@ -30,7 +30,7 @@ export const usePromptingStore = create<PromptingState>((set, get) => ({
 			isLoading: true,
 			isError: false,
 			error: '',
-			generations: [...get().generations, {command: '', explaination: ''}],
+			generations: [...get().generations, {command: '', explanation: ''}],
 		});
 
 		generatePromptingStream(
