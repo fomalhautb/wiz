@@ -190,18 +190,10 @@ impl TokenBias for CustomTokenBias {
         } else {
             // If less than 2 newlines, prevent eod token
             let text = self.0.borrow();
-            if text.ends_with('\n') {
-                return Some(-1.0);
-            }
+            let code_end_index = text.find("```\n");
 
-            let response_index = text.find("### Response:").unwrap_or(0);
-
-            let n_newlines = text[response_index..]
-                .chars()
-                .filter(|c| *c == '\n')
-                .count();
-
-            if n_newlines < 4 {
+            // Need at least another token after the code block
+            if code_end_index.is_none() || code_end_index.unwrap() + 4 >= text.len() {
                 Some(-1.0)
             } else {
                 None
@@ -265,9 +257,9 @@ fn inference_worker(rx: flume::Receiver<InferenceRequest>) {
                     _ => {}
                 }
 
-                req.response_sender
-                    .send(InferenceResult::Token(t.to_string()))
-                    .unwrap();
+                _ = req
+                    .response_sender
+                    .send(InferenceResult::Token(t.to_string()));
 
                 Ok(())
             },
