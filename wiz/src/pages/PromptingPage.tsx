@@ -80,15 +80,22 @@ const PromptingPage = ({prompt}: Props) => {
 	}, [currentState, revisedPrompt, generation]);
 
 	if (status === 'error') {
-		return <Text color='red'>Error: {errorMessage}</Text>;
+		return <Text color="red">Error: {errorMessage}</Text>;
 	}
 
 	if (status === 'connecting') {
-		return <Text><Spinner type="simpleDots" /></Text>;
+		return (
+			<Text>
+				<Spinner type="simpleDots" />
+			</Text>
+		);
 	}
 
 	if (status === 'starting_server') {
-		<Text color='green'>Starting backend server<Spinner type="simpleDots" /></Text>;
+		<Text color="green">
+			Starting backend server
+			<Spinner type="simpleDots" />
+		</Text>;
 	}
 
 	return (
@@ -104,12 +111,20 @@ const PromptingPage = ({prompt}: Props) => {
 
 			<Divider text={'Generated Command'} />
 			<EmptyLine />
-			<SyntaxHighlight code={generation?.command?.trim() || '...'} language={'bash'} />
+			{generation?.command ? (
+				<SyntaxHighlight code={generation?.command?.trim()} language={'bash'} />
+			) : (
+				<Spinner type="simpleDots" />
+			)}
 			<EmptyLine />
 
 			<Divider text={'Explanation'} />
 			<EmptyLine />
-			<Text>{generation?.explanation?.trim() || '...'}</Text>
+			{generation?.explanation ? (
+				<Text>{generation?.explanation?.trim()}</Text>
+			) : (
+				<Spinner type="simpleDots" />
+			)}
 			<EmptyLine />
 
 			<Divider />
