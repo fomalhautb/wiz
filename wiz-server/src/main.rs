@@ -8,15 +8,17 @@ use rand::rngs::ThreadRng;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::{
+    cell::RefCell,
     convert::Infallible,
     net::SocketAddr,
+    rc::Rc,
     sync::{Arc, Mutex},
 };
 use tokenizers::Tokenizer;
 use tokio::task::spawn_blocking;
 use wiz_rs::{
-    ConstantTokenBias, InferenceError, InferenceParameters, InferenceSessionParameters,
-    InferenceSnapshot, OutputToken,
+    InferenceError, InferenceParameters, InferenceSessionParameters, InferenceSnapshot,
+    OutputToken, TokenBias, EOD_TOKEN_ID,
 };
 
 struct AppState {
@@ -172,11 +174,48 @@ fn load_prompt_snapshot(
     InferenceSnapshot::load_from_disk(path).unwrap()
 }
 
+#[derive(Default, Clone, Debug, PartialEq)]
+pub struct CustomTokenBias(Rc<RefCell<String>>);
+
+impl CustomTokenBias {
+    pub fn new(bias: Rc<RefCell<String>>) -> Self {
+        Self(bias)
+    }
+}
+
+impl TokenBias for CustomTokenBias {
+    fn get(&self, tid: u32) -> Option<f32> {
+        if tid != EOD_TOKEN_ID {
+            None
+        } else {
+            // If less than 2 newlines, prevent eod token
+            let text = self.0.borrow();
+            if text.ends_with('\n') {
+                return Some(-1.0);
+            }
+
+            let response_index = text.find("### Response:").unwrap_or(0);
+
+            let n_newlines = text[response_index..]
+                .chars()
+                .filter(|c| *c == '\n')
+                .count();
+
+            if n_newlines < 4 {
+                Some(-1.0)
+            } else {
+                None
+            }
+        }
+    }
+}
+
 fn inference_worker(rx: flume::Receiver<InferenceRequest>) {
     let (mut model, vocab) = load_model();
     let snapshot = load_prompt_snapshot(PROMPT_PREFIX, &model, &vocab);
 
     while let Ok(req) = rx.recv() {
+        let text: Rc<RefCell<String>> = Rc::new(RefCell::new("".to_string()));
         let inference_params = InferenceParameters {
             n_threads: 4 as i32,
             n_batch: 8,
@@ -184,7 +223,7 @@ fn inference_worker(rx: flume::Receiver<InferenceRequest>) {
             top_p: 1.0,
             repeat_penalty: 0.00001,
             temp: 1.0,
-            bias_tokens: Box::new(ConstantTokenBias::default()),
+            bias_tokens: Box::new(CustomTokenBias::new(text.clone())),
         };
 
         let mut rng = ThreadRng::default();
@@ -214,6 +253,11 @@ fn inference_worker(rx: flume::Receiver<InferenceRequest>) {
             None,
             &mut rng,
             |t| {
+                {
+                    let mut text = text.borrow_mut();
+                    *text += &format!("{t}");
+                }
+
                 match t {
                     OutputToken::Token(_, false) => {
                         return Ok(());
