@@ -1,5 +1,6 @@
 import React, {useEffect, useMemo, useState} from 'react';
 import {Box, Text, useApp, useInput} from 'ink';
+import Spinner from 'ink-spinner';
 
 import State from '../components/Selection.js';
 import Divider from '../components/Devider.js';
@@ -16,6 +17,8 @@ type Props = {
 type State = 'selecting' | 'revise' | 'executed';
 
 const PromptingPage = ({prompt}: Props) => {
+	const status = usePromptingStore(state => state.status);
+	const errorMessage = usePromptingStore(state => state.errorMessage);
 	const generation = usePromptingStore(state => state.generation);
 	const prompts = usePromptingStore(state => state.prompts);
 	const addPrompt = usePromptingStore(state => state.addPrompt);
@@ -75,6 +78,18 @@ const PromptingPage = ({prompt}: Props) => {
 			return null;
 		}
 	}, [currentState, revisedPrompt, generation]);
+
+	if (status === 'error') {
+		return <Text color='red'>Error: {errorMessage}</Text>;
+	}
+
+	if (status === 'connecting') {
+		return <Text><Spinner type="simpleDots" /></Text>;
+	}
+
+	if (status === 'starting_server') {
+		<Text color='green'>Starting backend server<Spinner type="simpleDots" /></Text>;
+	}
 
 	return (
 		<Box flexDirection="column">
