@@ -19,7 +19,11 @@ const DEFAULT_CONFIG = Object.fromEntries(
 	Object.entries(CONFIG_TEMPLATE).map(([key, value]) => [key, value.default]),
 );
 
-const CONFIG_PATH = path.join(homedir(), '.wiz');
+const CONFIG_FOLDER = path.join(homedir(), '.wiz');
+const CONFIG_PATH = path.join(CONFIG_FOLDER, 'config.json')
+if (!fs.existsSync(CONFIG_FOLDER)){
+	fs.mkdirSync(CONFIG_FOLDER, { recursive: true });
+}
 
 const validateConfig = config => {
 	for (const [key, value] of Object.entries(config)) {
