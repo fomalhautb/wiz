@@ -25,7 +25,7 @@ export const downloadBinary = async () => {
 		return;
 	}
 
-	const version = 'v0.0.0-alpha.0';
+	const version = 'v0.0.2';
 	const variant = 'darwin-arm64';
 
 	const url = `https://github.com/fomalhautb/wiz/releases/download/${version}/wiz-server-${variant}`;
